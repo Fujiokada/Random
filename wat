@@ -38,7 +38,6 @@ local function placeTowers()
     print("Placing towers...")
     for _, tower in ipairs(towersToPlace) do
         spawnTowerRemote:FireServer(tower.id, tower.position, tower.param3, tower.param4)
-        task.wait(0.5) -- Delay between placing towers
     end
     towersPlaced = true
 end
@@ -47,7 +46,7 @@ end
 local function upgradeTowers()
     local sizeColliders = workspace:WaitForChild("SizeColliders")
     for _, collider in ipairs(sizeColliders:GetChildren()) do
-        local entityId = collider:GetAttribute("EntityID") -- Fetching EntityID from Attributes
+        local entityId = collider:GetAttribute("EntityID") -- Fetch EntityID from Attributes
         if entityId then
             for level = 2, upgradeLevels + 1 do
                 if not scriptEnabled then return end
@@ -81,5 +80,5 @@ while scriptEnabled do
         placeTowers()
         upgradeTowers()
     end
-    task.wait(10) -- Delay to prevent excessive checks
+    task.wait(5) -- Delay to prevent excessive checks
 end
