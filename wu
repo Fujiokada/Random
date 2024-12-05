@@ -44,7 +44,6 @@ end
 
 -- Function to vote for the map
 local function voteForMap()
-    print("Voting for map...")
     while scriptEnabled and isVoteUIActive() do
         voteDifficultyRemote:FireServer(voteDifficulty)
         task.wait(1)
@@ -53,7 +52,6 @@ end
 
 -- Function to place towers immediately
 local function placeTowers()
-    print("Placing towers...")
     for _, tower in ipairs(towersToPlace) do
         spawnTowerRemote:FireServer(tower.id, tower.position, tower.param3, tower.param4)
     end
@@ -76,7 +74,6 @@ local function upgradeTowers()
     for level = 2, upgradeLevels + 1 do
         for _, entityId in ipairs(towersToUpgrade) do
             if not scriptEnabled then return end
-            print("Upgrading tower with EntityId:", entityId, "to level:", level)
             local args = {
                 [1] = entityId,
                 [2] = level
@@ -89,7 +86,6 @@ end
 
 -- Function to restart the match
 local function restartMatch()
-    print("Restarting match...")
     while scriptEnabled and isRetryButtonActive() do
         restartRemote:FireServer()
         task.wait(0.5)
