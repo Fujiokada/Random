@@ -22,7 +22,7 @@ local towersToPlace = {
 }
 
 local upgradeLevels = 6 -- Number of upgrades to apply to each tower
-local upgradeInterval = 1 -- Time between upgrades in seconds
+local upgradeInterval = 0.5 -- Faster upgrade interval in seconds
 local voteDifficulty = "Expert" -- Difficulty level to vote for
 local towersPlaced = false -- Tracks if towers have already been placed this match
 
@@ -32,9 +32,8 @@ local function isMatchOver()
     return mainGui and mainGui:FindFirstChild("Retry") ~= nil
 end
 
--- Function to place towers
+-- Function to place towers immediately
 local function placeTowers()
-    if towersPlaced then return end -- Prevent duplicate placement
     print("Placing towers...")
     for _, tower in ipairs(towersToPlace) do
         spawnTowerRemote:FireServer(tower.id, tower.position, tower.param3, tower.param4)
@@ -42,47 +41,55 @@ local function placeTowers()
     towersPlaced = true
 end
 
--- Function to upgrade towers
+-- Function to upgrade all towers simultaneously
 local function upgradeTowers()
     local sizeColliders = workspace:WaitForChild("SizeColliders")
+    local towersToUpgrade = {}
+    
+    -- Collect EntityIds for all towers
     for _, model in ipairs(sizeColliders:GetChildren()) do
         if model:IsA("Model") and model:GetAttribute("EntityId") then
-            local entityId = model:GetAttribute("EntityId") -- Correct case for 'EntityId'
-            for level = 2, upgradeLevels + 1 do
-                if not scriptEnabled then return end
-                print("Upgrading tower with EntityId:", entityId, "to level:", level)
-                local args = {
-                    [1] = entityId, -- Replace with the correct EntityId
-                    [2] = level, -- Upgrade level
-                }
-                upgradeTowerRemote:FireServer(unpack(args)) -- Fire the upgrade remote
-                task.wait(upgradeInterval)
-            end
-        else
-            print("Warning: No 'EntityId' found for model:", model.Name)
+            table.insert(towersToUpgrade, model:GetAttribute("EntityId"))
         end
+    end
+
+    -- Upgrade all towers for each level
+    for level = 2, upgradeLevels + 1 do
+        for _, entityId in ipairs(towersToUpgrade) do
+            if not scriptEnabled then return end
+            print("Upgrading tower with EntityId:", entityId, "to level:", level)
+            local args = {
+                [1] = entityId,
+                [2] = level
+            }
+            upgradeTowerRemote:FireServer(unpack(args))
+        end
+        task.wait(upgradeInterval) -- Wait between upgrade levels
     end
 end
 
 -- Function to restart the match
 local function restartMatch()
     print("Restarting match...")
-    restartRemote:FireServer() -- Restart the match
-    task.wait(1)
     voteDifficultyRemote:FireServer(voteDifficulty) -- Vote for difficulty
     task.wait(1)
+    restartRemote:FireServer() -- Restart the match
+    task.wait(0.1)
     towersPlaced = false -- Reset placement flag for the new match
 end
 
 -- Main loop
 while scriptEnabled do
     if isMatchOver() then
-        -- If the match is over, restart and place towers again
+        -- If the match is over, restart and immediately place towers
         restartMatch()
-    else
-        -- If the match is ongoing, place towers and upgrade them
         placeTowers()
+    elseif not towersPlaced then
+        -- Place towers if not already placed in the current round
+        placeTowers()
+    else
+        -- Upgrade towers during the match
         upgradeTowers()
     end
-    task.wait(5) -- Delay to prevent excessive checks
+    task.wait(1) -- Delay to prevent excessive checks
 end
