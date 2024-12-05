@@ -46,16 +46,19 @@ end
 local function upgradeTowers()
     local sizeColliders = workspace:WaitForChild("SizeColliders")
     for _, collider in ipairs(sizeColliders:GetChildren()) do
-        local entityId = collider.Name
-        for level = 2, upgradeLevels + 1 do
-            if not scriptEnabled then return end
-            upgradeTowerRemote:FireServer(tonumber(entityId), level)
-            task.wait(upgradeInterval)
+        if collider:FindFirstChild("EntityID") then
+            local entityId = collider:GetAttribute("EntityID") -- Fetching EntityID from Attributes
+            if entityId then
+                for level = 2, upgradeLevels + 1 do
+                    if not scriptEnabled then return end
+                    upgradeTowerRemote:FireServer(tonumber(entityId), level)
+                    task.wait(upgradeInterval)
+                end
+            end
         end
     end
 end
 
--- Function to restart the match
 local function restartMatch()
     restartRemote:FireServer()
     task.wait(1)
@@ -77,4 +80,3 @@ while true do
 
     task.wait(10) -- Adjust delay as necessary to match game pace
 end
-
