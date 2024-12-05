@@ -45,17 +45,21 @@ end
 -- Function to upgrade towers
 local function upgradeTowers()
     local sizeColliders = workspace:WaitForChild("SizeColliders")
-    for _, collider in ipairs(sizeColliders:GetChildren()) do
-        local entityId = collider:GetAttribute("EntityID") -- Fetch EntityID from Attributes
-        if entityId then
+    for _, model in ipairs(sizeColliders:GetChildren()) do
+        if model:IsA("Model") and model:GetAttribute("EntityId") then
+            local entityId = model:GetAttribute("EntityId") -- Correct case for 'EntityId'
             for level = 2, upgradeLevels + 1 do
                 if not scriptEnabled then return end
-                print("Upgrading tower with EntityID:", entityId, "to level:", level)
-                upgradeTowerRemote:FireServer(tonumber(entityId), level)
+                print("Upgrading tower with EntityId:", entityId, "to level:", level)
+                local args = {
+                    [1] = entityId, -- Replace with the correct EntityId
+                    [2] = level, -- Upgrade level
+                }
+                upgradeTowerRemote:FireServer(unpack(args)) -- Fire the upgrade remote
                 task.wait(upgradeInterval)
             end
         else
-            print("Warning: Missing EntityID for collider:", collider.Name)
+            print("Warning: No 'EntityId' found for model:", model.Name)
         end
     end
 end
