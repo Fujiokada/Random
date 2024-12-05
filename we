@@ -26,10 +26,29 @@ local upgradeInterval = 0.5 -- Faster upgrade interval in seconds
 local voteDifficulty = "Expert" -- Difficulty level to vote for
 local towersPlaced = false -- Tracks if towers have already been placed this match
 
--- Helper function to check if the match has ended
-local function isMatchOver()
+-- Helper function to check if the vote UI is active
+local function isVoteUIActive()
+    local mainGui = PlayerGui:FindFirstChild("MainGui")
+    if mainGui then
+        local difficulty = mainGui:FindFirstChild("Difficulty")
+        return difficulty and difficulty:IsA("ImageLabel") and difficulty.Visible
+    end
+    return false
+end
+
+-- Helper function to check if the Retry button is present
+local function isRetryButtonActive()
     local mainGui = PlayerGui:FindFirstChild("MainGui")
     return mainGui and mainGui:FindFirstChild("Retry") ~= nil
+end
+
+-- Function to vote for the map
+local function voteForMap()
+    print("Voting for map...")
+    while scriptEnabled and isVoteUIActive() do
+        voteDifficultyRemote:FireServer(voteDifficulty)
+        task.wait(1)
+    end
 end
 
 -- Function to place towers immediately
@@ -71,19 +90,23 @@ end
 -- Function to restart the match
 local function restartMatch()
     print("Restarting match...")
-    voteDifficultyRemote:FireServer(voteDifficulty) -- Vote for difficulty
-    task.wait(1)
-    restartRemote:FireServer() -- Restart the match
-    task.wait(0.1)
+    while scriptEnabled and isRetryButtonActive() do
+        restartRemote:FireServer()
+        task.wait(0.5)
+    end
     towersPlaced = false -- Reset placement flag for the new match
 end
 
 -- Main loop
 while scriptEnabled do
-    if isMatchOver() then
-        -- If the match is over, restart and immediately place towers
+    if isRetryButtonActive() then
+        -- If the Retry button is active, restart and immediately place towers
         restartMatch()
+        voteForMap()
         placeTowers()
+    elseif isVoteUIActive() then
+        -- If voting UI is active, vote for the map
+        voteForMap()
     elseif not towersPlaced then
         -- Place towers if not already placed in the current round
         placeTowers()
