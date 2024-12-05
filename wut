@@ -24,23 +24,21 @@ local towersToPlace = {
 local upgradeLevels = 6 -- Number of upgrades to apply to each tower
 local upgradeInterval = 1 -- Time between upgrades in seconds
 local voteDifficulty = "Expert" -- Difficulty level to vote for
-local towersPlaced = false -- Tracks if towers have already been placed this round
+local towersPlaced = false -- Tracks if towers have already been placed this match
 
--- Helper function to check game state
-local function checkGameState()
+-- Helper function to check if the match has ended
+local function isMatchOver()
     local mainGui = PlayerGui:FindFirstChild("MainGui")
-    if mainGui then
-        return mainGui:FindFirstChild("Retry") ~= nil
-    end
-    return false
+    return mainGui and mainGui:FindFirstChild("Retry") ~= nil
 end
 
 -- Function to place towers
 local function placeTowers()
-    if towersPlaced then return end -- Prevent duplicate tower placement
+    if towersPlaced then return end -- Prevent duplicate placement
+    print("Placing towers...")
     for _, tower in ipairs(towersToPlace) do
         spawnTowerRemote:FireServer(tower.id, tower.position, tower.param3, tower.param4)
-        task.wait(0.5) -- Delay between placing towers to prevent server overload
+        task.wait(0.5) -- Delay between placing towers
     end
     towersPlaced = true
 end
@@ -63,26 +61,25 @@ local function upgradeTowers()
     end
 end
 
+-- Function to restart the match
 local function restartMatch()
-    restartRemote:FireServer()
+    print("Restarting match...")
+    restartRemote:FireServer() -- Restart the match
     task.wait(1)
-    voteDifficultyRemote:FireServer(voteDifficulty)
+    voteDifficultyRemote:FireServer(voteDifficulty) -- Vote for difficulty
     task.wait(1)
-    placeTowers()
+    towersPlaced = false -- Reset placement flag for the new match
 end
 
 -- Main loop
-while true do
-    if not scriptEnabled then break end
-
-    if checkGameState() then
-        print("Game state indicates a restart is required.")
+while scriptEnabled do
+    if isMatchOver() then
+        -- If the match is over, restart and place towers again
         restartMatch()
     else
-        print("Placing towers and upgrading...")
+        -- If the match is ongoing, place towers and upgrade them
         placeTowers()
         upgradeTowers()
     end
-
-    task.wait(10) -- Adjust delay as necessary to match game pace
+    task.wait(10) -- Delay to prevent excessive checks
 end
