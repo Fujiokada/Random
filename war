@@ -24,6 +24,7 @@ local towersToPlace = {
 local upgradeLevels = 6 -- Number of upgrades to apply to each tower
 local upgradeInterval = 1 -- Time between upgrades in seconds
 local voteDifficulty = "Expert" -- Difficulty level to vote for
+local towersPlaced = false -- Tracks if towers have already been placed this round
 
 -- Helper function to check game state
 local function checkGameState()
@@ -36,25 +37,28 @@ end
 
 -- Function to place towers
 local function placeTowers()
+    if towersPlaced then return end -- Prevent duplicate tower placement
     for _, tower in ipairs(towersToPlace) do
         spawnTowerRemote:FireServer(tower.id, tower.position, tower.param3, tower.param4)
         task.wait(0.5) -- Delay between placing towers to prevent server overload
     end
+    towersPlaced = true
 end
 
 -- Function to upgrade towers
 local function upgradeTowers()
     local sizeColliders = workspace:WaitForChild("SizeColliders")
     for _, collider in ipairs(sizeColliders:GetChildren()) do
-        if collider:FindFirstChild("EntityID") then
-            local entityId = collider:GetAttribute("EntityID") -- Fetching EntityID from Attributes
-            if entityId then
-                for level = 2, upgradeLevels + 1 do
-                    if not scriptEnabled then return end
-                    upgradeTowerRemote:FireServer(tonumber(entityId), level)
-                    task.wait(upgradeInterval)
-                end
+        local entityId = collider:GetAttribute("EntityID") -- Fetching EntityID from Attributes
+        if entityId then
+            for level = 2, upgradeLevels + 1 do
+                if not scriptEnabled then return end
+                print("Upgrading tower with EntityID:", entityId, "to level:", level)
+                upgradeTowerRemote:FireServer(tonumber(entityId), level)
+                task.wait(upgradeInterval)
             end
+        else
+            print("Warning: Missing EntityID for collider:", collider.Name)
         end
     end
 end
@@ -72,8 +76,10 @@ while true do
     if not scriptEnabled then break end
 
     if checkGameState() then
+        print("Game state indicates a restart is required.")
         restartMatch()
     else
+        print("Placing towers and upgrading...")
         placeTowers()
         upgradeTowers()
     end
