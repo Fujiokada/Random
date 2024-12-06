@@ -1,0 +1,117 @@
+-- Toggle the script on or off
+local scriptEnabled = true
+
+-- Services
+local ReplicatedStorage = game:GetService("ReplicatedStorage")
+local Players = game:GetService("Players")
+local LocalPlayer = Players.LocalPlayer
+local PlayerGui = LocalPlayer:WaitForChild("PlayerGui")
+
+-- Remotes
+local spawnTowerRemote = ReplicatedStorage:WaitForChild("Remotes"):WaitForChild("SpawnTowerServer")
+local upgradeTowerRemote = ReplicatedStorage:WaitForChild("Remotes"):WaitForChild("UpgradeTowerServer")
+local voteDifficultyRemote = ReplicatedStorage:WaitForChild("Remotes"):WaitForChild("VoteDifficulty")
+local restartRemote = ReplicatedStorage:WaitForChild("Remotes"):WaitForChild("VoteRestart")
+
+-- Configurations
+local towersToPlace = {
+    {id = "71923f34-850b-442a-8305-3e4d3cf2f6f0", position = Vector3.new(-1377.1441650390625, 3, 1218.1505126953125), param3 = 0, param4 = "{e183283f-c7de-43b0-af6f-e295bb81fe15}"},
+    {id = "79931fab-e2fa-44e0-8d10-e6d8c2b52488", position = Vector3.new(-1376.7821044921875, 3, 1225.1021728515625), param3 = 0, param4 = "{8752e0ac-76a6-4e82-8e7e-d9f47ac17297}"},
+    {id = "4093ee71-05b2-432c-96b4-f879d02597a9", position = Vector3.new(-1380.8499755859375, 5, 1247.6494140625), param3 = 0, param4 = "{4bc8aed9-7f6a-489d-8067-234f9c39d26f}"},
+    {id = "c692fc98-6ced-42cf-9244-897825440731", position = Vector3.new(-1366.705810546875, 5, 1248.6568603515625), param3 = 0, param4 = "{7698d014-dbd4-48b4-afaa-aa7771aa2951}"},
+    {id = "c5452b1e-50cd-4cd4-936f-c5e69db51b54", position = Vector3.new(-1395.6441650390625, 3, 1246.5419921875), param3 = 0, param4 = "{0d00bf34-c261-4d49-928a-41a84c263478}"},
+    {id = "c5452b1e-50cd-4cd4-936f-c5e69db51b54", position = Vector3.new(-1395.5728759765625, 3, 1256.72265625), param3 = 0, param4 = "{b88759e6-e92c-4a7a-8e89-dfa705cf8327}"},
+    {id = "c692fc98-6ced-42cf-9244-897825440731", position = Vector3.new(-1402.4222412109375, 3, 1250.462646484375), param3 = 0, param4 = "{b7e8dad7-0e73-4ad5-be48-708a2d60e65d}"}
+}
+
+local upgradeLevels = 8 -- Number of upgrades to apply to each tower
+local upgradeInterval = 0.3 -- Faster upgrade interval in seconds
+local voteDifficulty = "BossRushOne" -- Difficulty level to vote for
+local towersPlaced = false -- Tracks if towers have already been placed this match
+
+-- Helper function to check if the vote UI is active
+local function isVoteUIActive()
+    local mainGui = PlayerGui:FindFirstChild("MainGui")
+    if mainGui then
+        local difficulty = mainGui:FindFirstChild("Difficulty")
+        return difficulty and difficulty:IsA("ImageLabel") and difficulty.Visible
+    end
+    return false
+end
+
+-- Helper function to check if the Retry button is present
+local function isRetryButtonActive()
+    local mainGui = PlayerGui:FindFirstChild("MainGui")
+    return mainGui and mainGui:FindFirstChild("Retry") ~= nil
+end
+
+-- Function to vote for the map
+local function voteForMap()
+    while scriptEnabled and isVoteUIActive() do
+        voteDifficultyRemote:FireServer(voteDifficulty)
+        task.wait(1)
+    end
+end
+
+-- Function to place towers immediately
+local function placeTowers()
+    for _, tower in ipairs(towersToPlace) do
+        spawnTowerRemote:FireServer(tower.id, tower.position, tower.param3, tower.param4)
+    end
+    towersPlaced = true
+end
+
+-- Function to upgrade all towers simultaneously
+local function upgradeTowers()
+    local sizeColliders = workspace:WaitForChild("SizeColliders")
+    local towersToUpgrade = {}
+    
+    -- Collect EntityIds for all towers
+    for _, model in ipairs(sizeColliders:GetChildren()) do
+        if model:IsA("Model") and model:GetAttribute("EntityId") then
+            table.insert(towersToUpgrade, model:GetAttribute("EntityId"))
+        end
+    end
+
+    -- Upgrade all towers for each level
+    for level = 2, upgradeLevels + 1 do
+        for _, entityId in ipairs(towersToUpgrade) do
+            if not scriptEnabled then return end
+            local args = {
+                [1] = entityId,
+                [2] = level
+            }
+            upgradeTowerRemote:FireServer(unpack(args))
+        end
+        task.wait(upgradeInterval) -- Wait between upgrade levels
+    end
+end
+
+-- Function to restart the match
+local function restartMatch()
+    while scriptEnabled and isRetryButtonActive() do
+        restartRemote:FireServer()
+        task.wait(0.5)
+    end
+    towersPlaced = false -- Reset placement flag for the new match
+end
+
+-- Main loop
+while scriptEnabled do
+    if isRetryButtonActive() then
+        -- If the Retry button is active, restart and immediately place towers
+        restartMatch()
+        voteForMap()
+        placeTowers()
+    elseif isVoteUIActive() then
+        -- If voting UI is active, vote for the map
+        voteForMap()
+    elseif not towersPlaced then
+        -- Place towers if not already placed in the current round
+        placeTowers()
+    else
+        -- Upgrade towers during the match
+        upgradeTowers()
+    end
+    task.wait(1) -- Delay to prevent excessive checks
+end
