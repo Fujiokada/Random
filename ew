@@ -1,0 +1,37 @@
+-- Toggle the script on or off
+local scriptEnabled = true
+
+-- Services
+local ReplicatedStorage = game:GetService("ReplicatedStorage")
+local Players = game:GetService("Players")
+
+-- Remotes
+local voteDifficultyRemote = ReplicatedStorage:WaitForChild("Remotes"):WaitForChild("VoteDifficulty")
+local restartRemote = ReplicatedStorage:WaitForChild("Remotes"):WaitForChild("VoteRestart")
+local donateRemote = ReplicatedStorage:WaitForChild("Remotes"):WaitForChild("Donate")
+
+-- Arguments for the difficulty vote
+local voteArgs = {
+    [1] = "BossRushOne"
+}
+
+-- Arguments for donating to a player
+local donateArgs = {
+    [1] = Players:WaitForChild("Venqtrix"), -- Target player
+    [2] = 999999999 -- Amount to donate
+}
+
+-- Main loop
+while scriptEnabled do
+    -- Fire the VoteDifficulty remote
+    voteDifficultyRemote:FireServer(unpack(voteArgs))
+    
+    -- Fire the VoteRestart remote
+    restartRemote:FireServer()
+    
+    -- Fire the Donate remote
+    donateRemote:FireServer(unpack(donateArgs))
+    
+    -- Wait 0.5 seconds before repeating
+    task.wait(0.5)
+end
