@@ -24,7 +24,7 @@ local towersToPlace = {
     {id = "c692fc98-6ced-42cf-9244-897825440731", position = Vector3.new(2481.37158203125, 122.99697875976562, -3297.462890625), param3 = 0, param4 = "{6327e464-3d49-4001-a851-9c9adb1c614c}"}
 }
 
-local upgradeLevels = 6 -- Number of upgrades to apply to each tower
+local upgradeLevels = 7 -- Number of upgrades to apply to each tower
 local upgradeInterval = 0.5 -- Faster upgrade interval in seconds
 local voteDifficulty = "BossRushOne" -- Difficulty level to vote for
 local towersPlaced = false -- Tracks if towers have already been placed this match
