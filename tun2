@@ -15,12 +15,12 @@ local restartRemote = ReplicatedStorage:WaitForChild("Remotes"):WaitForChild("Vo
 
 -- Configurations
 local towersToPlace = {
-    {id = "71923f34-850b-442a-8305-3e4d3cf2f6f0", position = Vector3.new(-1377.12939453125, 3, 1218.47705078125), param3 = 0, param4 = "{60fbefb8-d86f-46b9-90ec-f36026fa418a}"},
-    {id = "79931fab-e2fa-44e0-8d10-e6d8c2b52488", position = Vector3.new(-1377.194091796875, 3, 1225.1583251953125), param3 = 0, param4 = "{e6cff326-4cc8-4bc8-bb21-b014095b35f6}"},
-    {id = "e6e77eb3-e248-4b77-8a6d-cfc37bfbe291", position = Vector3.new(-1385.102294921875, 5, 1243.8453369140625), param3 = 0, param4 = "{90da0ad1-da3e-4c8d-a7a5-ddce71beeb2b}"},
-    {id = "4093ee71-05b2-432c-96b4-f879d02597a9", position = Vector3.new(-1377.1624755859375, 7, 1260.2928466796875), param3 = 0, param4 = "{50ed5aff-7eed-47b4-9455-4786d10c9f0e}"},
-    {id = "c692fc98-6ced-42cf-9244-897825440731", position = Vector3.new(-1371.9158935546875, 5, 1247.410888671875), param3 = 0, param4 = "{479ae067-3225-4e34-9f66-bbd6380d00e0}"},
-    {id = "c692fc98-6ced-42cf-9244-897825440731", position = Vector3.new(-1380.877685546875, 3, 1217.103515625), param3 = 0, param4 = "{407d6d24-d0df-46b0-8a53-eb9b001db428}"}
+    {id = "71923f34-850b-442a-8305-3e4d3cf2f6f0", position = Vector3.new(-1377.7342529296875, 3, 1218.69189453125), param3 = 0, param4 = "{0f6c7b56-93b9-449a-99c5-7a18823ce5a8}"},
+    {id = "79931fab-e2fa-44e0-8d10-e6d8c2b52488", position = Vector3.new(-1377.361083984375, 3, 1225.3218994140625), param3 = 0, param4 = "{fe314e75-dc2b-41ae-b071-9c3a7bc31f9c}"},
+    {id = "e6e77eb3-e248-4b77-8a6d-cfc37bfbe291", position = Vector3.new(-1384.748291015625, 3, 1239.88330078125), param3 = 0, param4 = "{5415992c-f03c-453d-b3df-063c07d0fe0f}"},
+    {id = "4093ee71-05b2-432c-96b4-f879d02597a9", position = Vector3.new(-1383.559326171875, 5, 1258.644775390625), param3 = 0, param4 = "{70b11233-b6d9-4803-90dc-71166d301dde}"},
+    {id = "c692fc98-6ced-42cf-9244-897825440731", position = Vector3.new(-1375.3011474609375, 5, 1247.7896728515625), param3 = 0, param4 = "{3f48dac5-a4fc-480c-a5d4-65c6cd3041d7}"},
+    {id = "c692fc98-6ced-42cf-9244-897825440731", position = Vector3.new(-1381.802490234375, 3, 1215.7987060546875), param3 = 0, param4 = "{2c618165-e253-4786-a0b3-b6eeead791c2}"}
 }
 
 local upgradeLevels = 10 -- Number of upgrades to apply to each tower
