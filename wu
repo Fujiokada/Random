@@ -15,15 +15,18 @@ local restartRemote = ReplicatedStorage:WaitForChild("Remotes"):WaitForChild("Vo
 
 -- Configurations
 local towersToPlace = {
-    {id = "0aab7263-d40f-4d78-9e9d-e03ffd172234", position = Vector3.new(2489.9009, 123.997, -3216.7412), param3 = 0, param4 = "{a96dfb66-7683-44ed-9958-a2ab26749d2e}"},
-    {id = "0ff6b18d-ea72-4468-a7c3-a99ade5ec4a3", position = Vector3.new(2484.0676, 123.997, -3246.5415), param3 = 0, param4 = "{98a1bde7-1b9e-466a-95c3-9f1f9f3c1037}"},
-    {id = "71923f34-850b-442a-8305-3e4d3cf2f6f0", position = Vector3.new(2492.5356, 120.997, -3301.3604), param3 = 0, param4 = "{918fc065-2722-4c55-9dbe-143dd5283315}"},
-    {id = "79931fab-e2fa-44e0-8d10-e6d8c2b52488", position = Vector3.new(2483.9197, 120.997, -3301.2424), param3 = 0, param4 = "{c4f3ef97-ea97-4f2e-a329-9be3710d5ef8}"}
+    {id = "71923f34-850b-442a-8305-3e4d3cf2f6f0", position = Vector3.new(2489.943115234375, 120.99697875976562, -3302.78173828125), param3 = 0, param4 = "{9cfadb93-91f8-4785-b80d-ddf2780fb877}"},
+    {id = "79931fab-e2fa-44e0-8d10-e6d8c2b52488", position = Vector3.new(2483.796875, 120.99697875976562, -3302.881591796875), param3 = 0, param4 = "{0f2343d9-94c4-46df-9c98-c6d859905db5}"},
+    {id = "c5452b1e-50cd-4cd4-936f-c5e69db51b54", position = Vector3.new(2483.345947265625, 122.99697875976562, -3291.719970703125), param3 = 0, param4 = "{a3ee7f21-9526-4562-89e8-6db8a27c1bf4}"},
+    {id = "c5452b1e-50cd-4cd4-936f-c5e69db51b54", position = Vector3.new(2483.17578125, 123.99697875976562, -3283.344970703125), param3 = 0, param4 = "{5b579371-64d0-446b-97bb-1fb772877ffe}"},
+    {id = "4093ee71-05b2-432c-96b4-f879d02597a9", position = Vector3.new(2482.714111328125, 123.99697875976562, -3264.071044921875), param3 = 0, param4 = "{b66f9a88-4e7b-473a-bda1-ceb3bac1138d}"},
+    {id = "c692fc98-6ced-42cf-9244-897825440731", position = Vector3.new(2480.54345703125, 123.99697875976562, -3277.538330078125), param3 = 0, param4 = "{fc58b1b1-cad7-4ea2-87dc-29b808dbbd3a}"},
+    {id = "c692fc98-6ced-42cf-9244-897825440731", position = Vector3.new(2481.37158203125, 122.99697875976562, -3297.462890625), param3 = 0, param4 = "{6327e464-3d49-4001-a851-9c9adb1c614c}"}
 }
 
 local upgradeLevels = 6 -- Number of upgrades to apply to each tower
 local upgradeInterval = 0.5 -- Faster upgrade interval in seconds
-local voteDifficulty = "Expert" -- Difficulty level to vote for
+local voteDifficulty = "BossRushOne" -- Difficulty level to vote for
 local towersPlaced = false -- Tracks if towers have already been placed this match
 
 -- Helper function to check if the vote UI is active
