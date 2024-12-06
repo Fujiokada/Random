@@ -25,7 +25,7 @@ local towersToPlace = {
 }
 
 local upgradeLevels = 7 -- Number of upgrades to apply to each tower
-local upgradeInterval = 0.1 -- Faster upgrade interval in seconds
+local upgradeInterval = 0.3 -- Faster upgrade interval in seconds
 local voteDifficulty = "BossRushOne" -- Difficulty level to vote for
 local towersPlaced = false -- Tracks if towers have already been placed this match
 
