@@ -1,0 +1,37 @@
+-- Toggle the script on or off
+local autoskipEnabled = true
+
+-- Services
+local ReplicatedStorage = game:GetService("ReplicatedStorage")
+local Players = game:GetService("Players")
+local LocalPlayer = Players.LocalPlayer
+
+-- Path to the WaveLabel
+local waveLabel = LocalPlayer.PlayerGui.MainGui.Stats:WaitForChild("WaveLabel")
+
+-- SkipVote Remote
+local skipVoteRemote = ReplicatedStorage:WaitForChild("Remotes"):WaitForChild("SkipVote")
+
+-- Function to get the current wave number
+local function getWaveNumber()
+    if waveLabel and waveLabel:IsA("TextLabel") then
+        local waveText = waveLabel.Text
+        local waveNumber = tonumber(waveText:match("%d+")) -- Extract the numeric part of the text
+        return waveNumber
+    end
+    return nil
+end
+
+-- Main loop
+while autoskipEnabled do
+    local currentWave = getWaveNumber()
+    
+    -- Check if the current wave is below 11
+    if currentWave and currentWave < 11 then
+        -- If the wave is below 11, fire SkipVote
+        skipVoteRemote:FireServer()
+    end
+
+    -- Wait a short time before checking again
+    task.wait(0.5)
+end
