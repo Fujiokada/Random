@@ -15,17 +15,17 @@ local restartRemote = ReplicatedStorage:WaitForChild("Remotes"):WaitForChild("Vo
 
 -- Configurations
 local towersToPlace = {
-    {id = "71923f34-850b-442a-8305-3e4d3cf2f6f0", position = Vector3.new(2489.943115234375, 120.99697875976562, -3302.78173828125), param3 = 0, param4 = "{9cfadb93-91f8-4785-b80d-ddf2780fb877}"},
-    {id = "79931fab-e2fa-44e0-8d10-e6d8c2b52488", position = Vector3.new(2483.796875, 120.99697875976562, -3302.881591796875), param3 = 0, param4 = "{0f2343d9-94c4-46df-9c98-c6d859905db5}"},
-    {id = "c5452b1e-50cd-4cd4-936f-c5e69db51b54", position = Vector3.new(2483.345947265625, 122.99697875976562, -3291.719970703125), param3 = 0, param4 = "{a3ee7f21-9526-4562-89e8-6db8a27c1bf4}"},
-    {id = "c5452b1e-50cd-4cd4-936f-c5e69db51b54", position = Vector3.new(2483.17578125, 123.99697875976562, -3283.344970703125), param3 = 0, param4 = "{5b579371-64d0-446b-97bb-1fb772877ffe}"},
-    {id = "4093ee71-05b2-432c-96b4-f879d02597a9", position = Vector3.new(2482.714111328125, 123.99697875976562, -3264.071044921875), param3 = 0, param4 = "{b66f9a88-4e7b-473a-bda1-ceb3bac1138d}"},
-    {id = "c692fc98-6ced-42cf-9244-897825440731", position = Vector3.new(2480.54345703125, 123.99697875976562, -3277.538330078125), param3 = 0, param4 = "{fc58b1b1-cad7-4ea2-87dc-29b808dbbd3a}"},
-    {id = "c692fc98-6ced-42cf-9244-897825440731", position = Vector3.new(2481.37158203125, 122.99697875976562, -3297.462890625), param3 = 0, param4 = "{6327e464-3d49-4001-a851-9c9adb1c614c}"}
+    {id = "71923f34-850b-442a-8305-3e4d3cf2f6f0", position = Vector3.new(2489.881591796875, 121.99697875976562, -3300.175537109375), param3 = 0, param4 = "{a93ac39e-97d9-4415-bf94-379084296459}"},
+    {id = "79931fab-e2fa-44e0-8d10-e6d8c2b52488", position = Vector3.new(2483.793701171875, 120.99697875976562, -3301.3759765625), param3 = 0, param4 = "{75a327ab-49ac-4edc-8634-65464b305c60}"},
+    {id = "c5452b1e-50cd-4cd4-936f-c5e69db51b54", position = Vector3.new(2483.336669921875, 122.99697875976562, -3290.59521484375), param3 = 0, param4 = "{f9644b88-72e7-476c-9e56-e8658b793ebb}"},
+    {id = "4093ee71-05b2-432c-96b4-f879d02597a9", position = Vector3.new(2483.03955078125, 123.99697875976562, -3273.912841796875), param3 = 0, param4 = "{9ab2b384-6be3-4c96-ba22-9261bd994bba}"},
+    {id = "c692fc98-6ced-42cf-9244-897825440731", position = Vector3.new(2481.00537109375, 123.99697875976562, -3259.7451171875), param3 = 0, param4 = "{0bbe2d82-f02b-4937-b426-fd6429b8ee86}"},
+    {id = "c5452b1e-50cd-4cd4-936f-c5e69db51b54", position = Vector3.new(2484.276123046875, 122.99697875976562, -3196.095947265625), param3 = 0, param4 = "{f24a248b-de97-4cca-9850-0fff66d102b9}"},
+    {id = "c692fc98-6ced-42cf-9244-897825440731", position = Vector3.new(2489.79345703125, 122.99697875976562, -3290.5556640625), param3 = 0, param4 = "{fa2309e2-afba-4a32-887a-884d246387f6}"}
 }
 
 local upgradeLevels = 7 -- Number of upgrades to apply to each tower
-local upgradeInterval = 0.5 -- Faster upgrade interval in seconds
+local upgradeInterval = 0.1 -- Faster upgrade interval in seconds
 local voteDifficulty = "BossRushOne" -- Difficulty level to vote for
 local towersPlaced = false -- Tracks if towers have already been placed this match
 
