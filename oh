@@ -37,7 +37,7 @@ local function attackAllMobs()
         for _, mob in pairs(Workspace:WaitForChild("SpawnedEnemies"):GetChildren()) do
             if mob:IsA("Model") then
                 local args = {
-                    [1] = "StrongHit", -- Replace with the desired attack type
+                    [1] = "Ability1", -- Replace with the desired attack type
                     [2] = mob,
                     [3] = thirdArgument -- Use the captured third argument
                 }
