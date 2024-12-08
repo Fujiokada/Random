@@ -1,0 +1,60 @@
+-- Services
+local ReplicatedStorage = game:GetService("ReplicatedStorage")
+local Workspace = game:GetService("Workspace")
+
+-- Remotes
+local damageEnemyRemote = ReplicatedStorage:WaitForChild("WDOReplicatedStorage"):WaitForChild("Events"):WaitForChild("damageEnemy")
+
+-- Storage for the third argument
+local thirdArgument = nil
+
+-- Hook the __namecall metamethod
+local mt = getrawmetatable(game)
+local oldNamecall = mt.__namecall
+setreadonly(mt, false)
+
+mt.__namecall = function(self, ...)
+    local method = getnamecallmethod()
+    local args = {...}
+
+    -- Check for calls to the 'damageEnemy' remote
+    if method == "FireServer" and self == damageEnemyRemote then
+        -- Capture the third argument dynamically
+        if args[3] then
+            thirdArgument = args[3]
+        end
+    end
+
+    -- Proceed with the original call
+    return oldNamecall(self, ...)
+end
+
+setreadonly(mt, true)
+
+-- Function to attack all mobs
+local function attackAllMobs()
+    if thirdArgument then
+        for _, mob in pairs(Workspace:WaitForChild("SpawnedEnemies"):GetChildren()) do
+            if mob:IsA("Model") then
+                local args = {
+                    [1] = "StrongHit", -- Replace with the desired attack type
+                    [2] = mob,
+                    [3] = thirdArgument -- Use the captured third argument
+                }
+                damageEnemyRemote:FireServer(unpack(args))
+            end
+        end
+    else
+        warn("Third argument not captured yet. Wait for a 'damageEnemy' remote to fire.")
+    end
+end
+
+-- Toggleable loop to attack all mobs every second
+local autoAttackEnabled = true
+
+while true do
+    if autoAttackEnabled then
+        attackAllMobs()
+    end
+    task.wait(0.1) -- Repeat every second
+end
