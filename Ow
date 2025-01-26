@@ -1,6 +1,6 @@
 -- Define keybinds
-local recordKey = Enum.KeyCode.F1
-local replayKey = Enum.KeyCode.F2
+local recordKey = Enum.KeyCode.P
+local replayKey = Enum.KeyCode.L
 
 -- Variables for tracking state
 local isRecording = false
