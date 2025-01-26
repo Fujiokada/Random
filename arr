@@ -20,7 +20,7 @@ local oldNamecall = mt.__namecall
 -- Overwrite __namecall to hook into remote firing
 mt.__namecall = function(self, ...)
     local method = getnamecallmethod()
-    if (method == "FireServer" or method == "InvokeServer") and (self:IsA("RemoteEvent") or self:IsA("RemoteFunction")) then
+    if method == "FireServer" or method == "InvokeServer" then
         -- Record the remote call if recording is active
         if isRecording then
             table.insert(recordedRemotes, {remote = self, args = {...}})
@@ -43,15 +43,11 @@ local function startReplay()
     replayLoop = task.spawn(function()
         while isReplaying do
             for _, data in ipairs(recordedRemotes) do
-                -- Validate the remote and its existence
                 local remote = data.remote
-                if remote and (remote:IsA("RemoteEvent") or remote:IsA("RemoteFunction")) then
-                    remote:FireServer(unpack(data.args))
-                    print("Replayed remote:", remote.Name)
-                else
-                    print("Invalid or destroyed remote detected during replay:", tostring(remote))
-                end
-                task.wait(1) -- Replay interval
+                local args = data.args
+                remote:FireServer(unpack(args))
+                print("Replayed remote:", remote.Name)
+                task.wait(2) -- Replay interval
             end
         end
     end)
