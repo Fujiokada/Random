@@ -4,43 +4,36 @@ local npcFolder = workspace:WaitForChild("BadNPCs") -- Folder containing NPCs
 local projectileName = "WindArrow" -- Name of the projectile
 local targetName = "Golem" -- Name of the NPCs to target
 
--- Function to find the humanoid of a Golem
+-- Function to get the humanoid of a Golem
 local function getHumanoid(npc)
     return npc:FindFirstChildOfClass("Humanoid")
 end
 
--- Function to teleport the projectile to a Golem
-local function teleportToNPC(projectile, npc)
-    if projectile and projectile.Parent == effectsFolder and npc:IsA("Model") and npc.Name == targetName then
+-- Function to teleport the WindArrow to a Golem
+local function teleportToHumanoid(projectile, npc)
+    if projectile and npc:IsA("Model") and npc.Name == targetName then
         local targetPart = npc:FindFirstChild("HumanoidRootPart") or npc:FindFirstChild("Head")
         if targetPart then
-            projectile.CFrame = targetPart.CFrame -- Teleport WindArrow to the Golem
+            projectile.CFrame = targetPart.CFrame -- Teleport the WindArrow to the Golem's position
         end
     end
 end
 
--- Function to handle the WindArrow behavior
+-- Function to handle WindArrow behavior
 local function onWindArrowAdded(projectile)
     if projectile.Name == projectileName and projectile:IsA("UnionOperation") then
-        print("WindArrow detected, starting targeting system...")
+        print("WindArrow detected, starting rapid targeting...")
 
-        -- Loop through Golems and teleport the WindArrow
+        -- Loop to continuously teleport the WindArrow to active Golems
         while projectile.Parent == effectsFolder do
             for _, npc in ipairs(npcFolder:GetChildren()) do
                 if npc:IsA("Model") and npc.Name == targetName then
                     local humanoid = getHumanoid(npc)
                     if humanoid and humanoid.Health > 0 then
-                        -- Teleport the projectile to this Golem
-                        teleportToNPC(projectile, npc)
-                        
-                        -- Wait for the Golem to die or a short delay before retargeting
-                        while humanoid.Health > 0 and projectile.Parent == effectsFolder do
-                            task.wait(0.1)
-                        end
+                        teleportToHumanoid(projectile, npc) -- Teleport to the NPC
                     end
                 end
             end
-            task.wait(0.1) -- Small delay to avoid overloading
         end
     end
 end
@@ -48,7 +41,7 @@ end
 -- Monitor the Effects folder for the projectile
 effectsFolder.ChildAdded:Connect(function(child)
     if child.Name == projectileName then
-        task.wait(0.1) -- Optional delay to ensure it initializes
+        task.wait(0.1) -- Optional initialization delay
         onWindArrowAdded(child)
     end
 end)
@@ -56,6 +49,6 @@ end)
 -- Check if the projectile already exists in the folder
 local existingProjectile = effectsFolder:FindFirstChild(projectileName)
 if existingProjectile then
-    task.wait(0.1) -- Optional delay to ensure it initializes
+    task.wait(0.1) -- Optional initialization delay
     onWindArrowAdded(existingProjectile)
 end
