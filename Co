@@ -1,0 +1,164 @@
+local player = game.Players.LocalPlayer
+
+--[[
+1. Equip Tool Functionality
+--]]
+local toolName = "DemonDweller"
+local characterPath = workspace:WaitForChild("Characters"):WaitForChild("Venqtrix")
+
+local function equipTool()
+    local character = player.Character or player.CharacterAdded:Wait()
+    local backpack = player:WaitForChild("Backpack")
+    local tool = character:FindFirstChild(toolName)
+    if not tool then
+        tool = characterPath:FindFirstChild(toolName)
+        if tool then
+            tool.Parent = character
+        else
+            tool = backpack:FindFirstChild(toolName)
+            if tool then
+                tool.Parent = character
+            end
+        end
+    end
+end
+
+task.spawn(function()
+    while true do
+        equipTool()
+        task.wait(0.1)
+    end
+end)
+
+--[[
+2. Teleport NPCs in Front of Player
+--]]
+local npcFolder = workspace:WaitForChild("BadNPCs")
+
+local function getPositionInFrontOfPlayer()
+    local character = player.Character or player.CharacterAdded:Wait()
+    local humanoidRootPart = character:WaitForChild("HumanoidRootPart")
+    return humanoidRootPart.CFrame * CFrame.new(0, 0, -10)
+end
+
+local function teleportNPC(npc)
+    if npc:IsA("Model") then
+        local primaryPart = npc.PrimaryPart or npc:FindFirstChild("HumanoidRootPart")
+        if primaryPart then
+            primaryPart.CFrame = getPositionInFrontOfPlayer()
+        end
+    end
+end
+
+local function teleportAllNPCs()
+    for _, npc in ipairs(npcFolder:GetChildren()) do
+        teleportNPC(npc)
+    end
+end
+
+npcFolder.ChildAdded:Connect(function(npc)
+    teleportNPC(npc)
+end)
+
+task.spawn(function()
+    while true do
+        teleportAllNPCs()
+        task.wait(0.05)
+    end
+end)
+
+--[[
+3. Remote Fire Functionality
+--]]
+local args = {
+    [1] = "selle",
+    [2] = "GolemCore"
+}
+local remote = game:GetService("ReplicatedStorage"):WaitForChild("MainRemote")
+
+task.spawn(function()
+    while true do
+        remote:FireServer(unpack(args))
+        task.wait(1)
+    end
+end)
+
+--[[
+4. Teleport Player to Specific Position
+--]]
+local teleportPosition = Vector3.new(-919, 45, -2546)
+local teleportInterval = 0.1
+local isTeleporting = true
+
+local function teleportCharacter()
+    local character = player.Character or player.CharacterAdded:Wait()
+    local rootPart = character:WaitForChild("HumanoidRootPart")
+
+    while isTeleporting do
+        rootPart.CFrame = CFrame.new(teleportPosition)
+        task.wait(teleportInterval)
+    end
+end
+
+task.spawn(teleportCharacter)
+
+game:GetService("UserInputService").InputBegan:Connect(function(input, gameProcessed)
+    if gameProcessed then return end
+    if input.KeyCode == Enum.KeyCode.T then
+        isTeleporting = not isTeleporting
+        if isTeleporting then
+            task.spawn(teleportCharacter)
+        end
+    end
+end)
+
+--[[
+5. Interact with Nearest ProximityPrompt
+--]]
+local interactionRadius = 20
+local interactionInterval = 2
+local isInteracting = true
+
+local function getNearestProximityPrompt()
+    local character = player.Character or player.CharacterAdded:Wait()
+    local rootPart = character:WaitForChild("HumanoidRootPart")
+
+    local nearestPrompt = nil
+    local shortestDistance = math.huge
+
+    for _, prompt in ipairs(workspace:GetDescendants()) do
+        if prompt:IsA("ProximityPrompt") and prompt.Enabled then
+            local distance = (prompt.Parent.Position - rootPart.Position).Magnitude
+            if distance <= interactionRadius and distance < shortestDistance then
+                nearestPrompt = prompt
+                shortestDistance = distance
+            end
+        end
+    end
+
+    return nearestPrompt
+end
+
+local function interactWithPrompt()
+    while isInteracting do
+        local nearestPrompt = getNearestProximityPrompt()
+        if nearestPrompt then
+            nearestPrompt:InputHoldBegin()
+            task.wait(0.1)
+            nearestPrompt:InputHoldEnd()
+        end
+        task.wait(interactionInterval)
+    end
+end
+
+task.spawn(interactWithPrompt)
+
+game:GetService("UserInputService").InputBegan:Connect(function(input, gameProcessed)
+    if gameProcessed then return end
+    if input.KeyCode == Enum.KeyCode.I then
+        isInteracting = not isInteracting
+        if isInteracting then
+            task.spawn(interactWithPrompt)
+        end
+    end
+end)
