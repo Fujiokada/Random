@@ -38,7 +38,7 @@ local npcFolder = workspace:WaitForChild("BadNPCs")
 local function getPositionInFrontOfPlayer()
     local character = player.Character or player.CharacterAdded:Wait()
     local humanoidRootPart = character:WaitForChild("HumanoidRootPart")
-    return humanoidRootPart.CFrame * CFrame.new(0, 0, -10)
+    return humanoidRootPart.CFrame * CFrame.new(0, 0, -8)
 end
 
 local function teleportNPC(npc)
