@@ -47,6 +47,6 @@ task.spawn(function()
             requestRollRemote:InvokeServer(true)
             cutsceneRemote:FireServer()
         end
-        task.wait(0.1) -- Loop runs every 0.1s
+        task.wait() -- Loop runs every 0.1s
     end
 end)
