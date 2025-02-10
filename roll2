@@ -32,7 +32,7 @@ task.spawn(function()
         if _G.AutoCraft then
             for _, args in ipairs(craftingItems) do
                 craftingRemote:InvokeServer(unpack(args))
-                task.wait(0.1)
+                task.wait()
                 if not _G.AutoCraft then break end -- Stop if toggled off
             end
         end
