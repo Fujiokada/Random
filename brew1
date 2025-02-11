@@ -1,0 +1,70 @@
+local ReplicatedStorage = game:GetService("ReplicatedStorage")
+local Players = game:GetService("Players")
+local LocalPlayer = Players.LocalPlayer
+local craftingRemote = ReplicatedStorage:WaitForChild("GetRemoteEvents"):WaitForChild("Crafting"):WaitForChild("Craft")
+local addItemRemote = ReplicatedStorage:WaitForChild("GetRemoteEvents"):WaitForChild("Crafting"):WaitForChild("AddItem")
+
+_G.AutoBrew = true -- Toggle for potion crafting loop
+
+local potionRecipes = {
+    ["Haste Potion"] = { Auras = { Electric = 2 } },
+    ["Haste Potion II"] = { 
+        Auras = { Rare = 4, Uncommon = 7, Windy = 1 }, 
+        Items = { ["Haste Potion"] = 5 } 
+    },
+    ["Luck Potion"] = { Auras = { Natural = 3 } },
+    ["Luck Potion II"] = { 
+        Auras = { Lucky = 1, Rare = 1, Uncommon = 3 }, 
+        Items = { ["Luck Potion"] = 3 } 
+    },
+    ["Luck Potion III"] = { 
+        Auras = { Golden = 2, Natural = 1, Rare = 3, Uncommon = 10 } 
+    },
+    ["Stardust Potion"] = { 
+        Auras = { Asterium = 1, Divine = 15, Life = 3, Lunar = 5 }, 
+        Items = { ["Luck Potion"] = 100 } 
+    },
+    ["Stardust Potion II"] = { 
+        Auras = { Crystal = 5, Divine = 100, Golden = 25, Stardust = 1 }, 
+        Items = { ["Stardust Potion"] = 1 } 
+    }
+}
+
+local function checkAndCraftPotions()
+    while _G.AutoBrew do
+        for potionName, recipe in pairs(potionRecipes) do
+            local potionPath = LocalPlayer.Crafting.Potions:FindFirstChild(potionName)
+            if potionPath then
+                local canCraft = true
+                
+                -- Check aura requirements
+                for auraName, requiredAmount in pairs(recipe.Auras or {}) do
+                    local auraPath = potionPath:FindFirstChild("Aura") and potionPath.Aura:FindFirstChild(auraName)
+                    if not auraPath or auraPath.Value < requiredAmount then
+                        canCraft = false
+                        break
+                    end
+                end
+                
+                -- Check and add missing items
+                for itemName, requiredAmount in pairs(recipe.Items or {}) do
+                    local itemPath = potionPath:FindFirstChild("Item") and potionPath.Item:FindFirstChild(itemName)
+                    local currentAmount = itemPath and itemPath.Value or 0
+                    if currentAmount < requiredAmount then
+                        local missingAmount = requiredAmount - currentAmount
+                        local args = { "Potions", potionName, "Item", itemName, missingAmount }
+                        addItemRemote:InvokeServer(unpack(args))
+                    end
+                end
+                
+                -- Fire crafting remote if all requirements are met
+                if canCraft then
+                    craftingRemote:InvokeServer("Potions", potionName)
+                end
+            end
+        end
+        task.wait(0.5) -- Check every 0.5 seconds
+    end
+end
+
+task.spawn(checkAndCraftPotions)
