@@ -7,7 +7,7 @@ _G.AutoCraft = true -- Toggle for crafting loop
 _G.AutoRoll = true -- Toggle for rolling loop
 
 local craftingItems = {
-    {"Potions", "Luck Potion", "Aura", "Natural", 1},
+    {"Potions", "Luck Potion", "Aura", "Natural", 3},
     {"Potions", "Luck Potion II", "Aura", "Lucky", 1},
     {"Potions", "Luck Potion II", "Aura", "Rare", 1},
     {"Potions", "Luck Potion III", "Aura", "Golden", 1},
@@ -17,7 +17,7 @@ local craftingItems = {
     {"Potions", "Luck Potion II", "Aura", "Uncommon", 1},
     {"Potions", "Luck Potion III", "Aura", "Uncommon", 1},
     {"Potions", "Luck Potion III", "Aura", "Rare", 1},
-    {"Potions", "Luck Potion III", "Aura", "Natural", 1},
+    {"Potions", "Luck Potion III", "Aura", "Natural", 2},
     {"Potions", "Haste Potion II", "Aura", "Rare", 1},
     {"Potions", "Stardust Potion", "Aura", "Lunar", 1},
     {"Potions", "Stardust Potion", "Aura", "Life", 1},
