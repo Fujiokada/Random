@@ -65,7 +65,7 @@ local function checkAndCraftPotions()
                 end
             end
         end
-        task.wait(0.1) -- Check every 0.1 seconds
+        task.wait() -- Check every 0.1 seconds
     end
 end
 
