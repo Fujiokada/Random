@@ -28,22 +28,23 @@ local craftingItems = {
     {"Potions", "Stardust Potion II", "Aura", "Divine", 1}
 }
 
--- Faster AutoCraft Loop (Batching multiple requests at once)
+-- **Fair AutoCraft Loop (Round-Robin)**
 task.spawn(function()
     while _G.AutoCraft do
         for _, args in ipairs(craftingItems) do
-            task.spawn(function() craftingRemote:InvokeServer(unpack(args)) end) -- Run multiple in parallel
-            if not _G.AutoCraft then break end
+            craftingRemote:InvokeServer(unpack(args)) -- Add one ingredient for each potion in sequence
+            task.wait(0.05) -- Small delay ensures fair distribution across potions
+            if not _G.AutoCraft then break end -- Stop if toggled off
         end
-        task.wait(0.1) -- Small delay to prevent lag or detection
+        task.wait(0.1) -- Small delay before the next full cycle
     end
 end)
 
--- RequestRoll Loop (Runs every 0.1s)
+-- **RequestRoll Loop (Ensuring Game Cooldown)**
 task.spawn(function()
     while _G.AutoRoll do
         requestRollRemote:InvokeServer(true)
         cutsceneRemote:FireServer()
-        task.wait(0.1) -- Adjust delay if necessary
+        task.wait(1.5) -- Adjust based on game's cooldown system
     end
 end)
