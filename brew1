@@ -18,15 +18,15 @@ local potionRecipes = {
         Items = { ["Luck Potion"] = 3 } 
     },
     ["Luck Potion III"] = { 
-        Auras = { Golden = 2, Natural = 1, Rare = 3, Uncommon = 10 } 
-        Items = { ["Luck Potion II"] = 3 } 
+        Auras = { Golden = 2, Natural = 1, Rare = 3, Uncommon = 10 }, 
+        Items = { ["Luck Potion II"] = 3 } -- Fixed missing comma before this line
     },
     ["Stardust Potion"] = { 
         Auras = { Asterium = 1, Divine = 15, Life = 3, Lunar = 5 }, 
         Items = { ["Luck Potion"] = 100 } 
     },
     ["Stardust Potion II"] = { 
-        Auras = { Crystal = 5, Divine = 100, Golden = 25, Stardust = 1 },
+        Auras = { Crystal = 5, Divine = 100, Golden = 25, Stardust = 1 }
     }
 }
 
@@ -46,14 +46,16 @@ local function checkAndCraftPotions()
                     end
                 end
                 
-                -- Check and add missing items
-                for itemName, requiredAmount in pairs(recipe.Items or {}) do
-                    local itemPath = potionPath:FindFirstChild("Item") and potionPath.Item:FindFirstChild(itemName)
-                    local currentAmount = itemPath and itemPath.Value or 0
-                    if currentAmount < requiredAmount then
-                        local missingAmount = requiredAmount - currentAmount
-                        local args = { "Potions", potionName, "Item", itemName, missingAmount }
-                        addItemRemote:InvokeServer(unpack(args))
+                -- Check and add missing items (except for Stardust Potion II)
+                if potionName ~= "Stardust Potion II" then
+                    for itemName, requiredAmount in pairs(recipe.Items or {}) do
+                        local itemPath = potionPath:FindFirstChild("Item") and potionPath.Item:FindFirstChild(itemName)
+                        local currentAmount = itemPath and itemPath.Value or 0
+                        if currentAmount < requiredAmount then
+                            local missingAmount = requiredAmount - currentAmount
+                            local args = { "Potions", potionName, "Item", itemName, missingAmount }
+                            addItemRemote:InvokeServer(unpack(args))
+                        end
                     end
                 end
                 
@@ -63,7 +65,7 @@ local function checkAndCraftPotions()
                 end
             end
         end
-        task.wait(0.1) -- Check every 0.5 seconds
+        task.wait(0.1) -- Check every 0.1 seconds
     end
 end
 
