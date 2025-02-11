@@ -18,7 +18,6 @@ local craftingItems = {
     {"Potions", "Luck Potion III", "Aura", "Uncommon", 1},
     {"Potions", "Luck Potion III", "Aura", "Rare", 1},
     {"Potions", "Luck Potion III", "Aura", "Natural", 1},
-    {"Potions", "Haste Potion II", "Aura", "Uncommon", 1},
     {"Potions", "Haste Potion II", "Aura", "Rare", 1},
     {"Potions", "Stardust Potion", "Aura", "Lunar", 1},
     {"Potions", "Stardust Potion", "Aura", "Life", 1},
