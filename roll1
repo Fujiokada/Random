@@ -1,0 +1,114 @@
+local ReplicatedStorage = game:GetService("ReplicatedStorage")
+local Players = game:GetService("Players")
+local LocalPlayer = Players.LocalPlayer
+local craftingRemote = ReplicatedStorage:WaitForChild("GetRemoteEvents"):WaitForChild("Crafting"):WaitForChild("Craft")
+local addItemRemote = ReplicatedStorage:WaitForChild("GetRemoteEvents"):WaitForChild("Crafting"):WaitForChild("AddItem")
+local requestRollRemote = ReplicatedStorage:WaitForChild("GetRemoteEvents"):WaitForChild("RequestRoll")
+local cutsceneRemote = ReplicatedStorage:WaitForChild("GetRemoteEvents"):WaitForChild("Roll"):WaitForChild("CutsceneFinished")
+
+_G.AutoCraft = true  -- Toggle for crafting loop
+_G.AutoRoll = true   -- Toggle for rolling loop
+
+local craftingRecipes = {
+    ["Haste Potion"] = {
+        Auras = {Electric = 2}
+    },
+    ["Haste Potion II"] = {
+        Auras = {Rare = 4, Uncommon = 7, Windy = 1},
+        Items = {["Haste Potion"] = 5}
+    },
+    ["Luck Potion"] = {
+        Auras = {Natural = 3}
+    },
+    ["Luck Potion II"] = {
+        Auras = {Lucky = 1, Rare = 1, Uncommon = 3},
+        Items = {["Luck Potion"] = 3}
+    },
+    ["Luck Potion III"] = {
+        Auras = {Golden = 2, Natural = 1, Rare = 3, Uncommon = 10}
+    },
+    ["Stardust Potion"] = {
+        Auras = {Asterium = 1, Divine = 15, Life = 3, Lunar = 5},
+        Items = {["Luck Potion"] = 100}
+    },
+    ["Stardust Potion II"] = {
+        Auras = {Crystal = 5, Divine = 100, Golden = 25, Stardust = 1},
+        Items = {["Stardust Potion"] = 1}
+    }
+}
+
+-- Function to check if crafting conditions are met
+local function canCraft(potionName)
+    local potionData = craftingRecipes[potionName]
+    if not potionData then return false end
+
+    local potionFolder = LocalPlayer.Crafting.Potions:FindFirstChild(potionName)
+    if not potionFolder then return false end
+
+    -- Check required Auras
+    if potionData.Auras then
+        for auraName, requiredAmount in pairs(potionData.Auras) do
+            local auraValue = potionFolder.Aura:FindFirstChild(auraName)
+            if not auraValue or auraValue.Value < requiredAmount then
+                return false -- Missing or insufficient aura
+            end
+        end
+    end
+
+    -- Check required Items (Potions)
+    if potionData.Items then
+        for itemName, requiredAmount in pairs(potionData.Items) do
+            local itemValue = potionFolder.Item:FindFirstChild(itemName)
+            if not itemValue or itemValue.Value < requiredAmount then
+                return false -- Missing or insufficient item
+            end
+        end
+    end
+
+    return true -- All requirements met
+end
+
+-- Function to add missing potions (does NOT limit them)
+local function addMissingPotions()
+    for potionName, potionData in pairs(craftingRecipes) do
+        local potionFolder = LocalPlayer.Crafting.Potions:FindFirstChild(potionName)
+        if potionFolder and potionData.Items then
+            for requiredPotion, neededAmount in pairs(potionData.Items) do
+                local itemValue = potionFolder.Item:FindFirstChild(requiredPotion)
+                if itemValue and itemValue.Value < neededAmount then
+                    -- Add only missing potions, ignore if over
+                    addItemRemote:InvokeServer("Potions", requiredPotion, neededAmount - itemValue.Value)
+                end
+            end
+        end
+    end
+end
+
+-- AutoCraft Loop (Runs every 0.5s)
+task.spawn(function()
+    while true do
+        if _G.AutoCraft then
+            addMissingPotions() -- Only add missing potions, does not cap them
+
+            for potionName in pairs(craftingRecipes) do
+                if canCraft(potionName) then
+                    craftingRemote:InvokeServer("Potions", potionName)
+                    task.wait()
+                end
+                if not _G.AutoCraft then break end -- Stop if toggled off
+            end
+        end
+        task.wait(0.5) -- Small delay before checking again
+    end
+end)
+
+-- RequestRoll Loop (Runs every 0.1s)
+task.spawn(function()
+    while true do
+        if _G.AutoRoll then
+            requestRollRemote:InvokeServer(true)
+            cutsceneRemote:FireServer()
+        end
+        task.wait() -- Loop runs every 0.1s
+    end
+end)
