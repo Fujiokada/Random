@@ -38,7 +38,7 @@ task.spawn(function()
                 if not _G.AutoCraft then break end -- Stop if toggled off
             end
         end
-        task.wait(0.1) -- Small delay before checking toggle again
+        task.wait() -- Small delay before checking toggle again
     end
 end)
 
