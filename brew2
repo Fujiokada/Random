@@ -25,8 +25,7 @@ local potionRecipes = {
         Items = { ["Luck Potion"] = 100 } 
     },
     ["Stardust Potion II"] = { 
-        Auras = { Crystal = 5, Divine = 100, Golden = 25, Stardust = 1 }, 
-        Items = { ["Stardust Potion"] = 1 } 
+        Auras = { Crystal = 5, Divine = 100, Golden = 25, Stardust = 1 },
     }
 }
 
