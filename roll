@@ -44,6 +44,6 @@ task.spawn(function()
     while _G.AutoRoll do
         requestRollRemote:InvokeServer(true)
         cutsceneRemote:FireServer()
-        task.wait(0.1) -- Adjust delay if necessary
+        task.wait() -- Adjust delay if necessary
     end
 end)
