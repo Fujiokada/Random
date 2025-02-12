@@ -1,0 +1,49 @@
+local ReplicatedStorage = game:GetService("ReplicatedStorage")
+local craftingRemote = ReplicatedStorage:WaitForChild("GetRemoteEvents"):WaitForChild("Crafting"):WaitForChild("AddItem")
+local requestRollRemote = ReplicatedStorage:WaitForChild("GetRemoteEvents"):WaitForChild("RequestRoll")
+local cutsceneRemote = ReplicatedStorage:WaitForChild("GetRemoteEvents"):WaitForChild("Roll"):WaitForChild("CutsceneFinished")
+
+_G.AutoCraft = true -- Toggle for crafting loop
+_G.AutoRoll = true -- Toggle for rolling loop
+
+local craftingItems = {
+    {"Potions", "Luck Potion", "Aura", "Natural", 1},
+    {"Potions", "Luck Potion II", "Aura", "Lucky", 1},
+    {"Potions", "Luck Potion II", "Aura", "Rare", 1},
+    {"Potions", "Luck Potion III", "Aura", "Golden", 1},
+    {"Potions", "Haste Potion", "Aura", "Electric", 1},
+    {"Potions", "Haste Potion II", "Aura", "Windy", 1},
+    {"Potions", "Haste Potion II", "Aura", "Uncommon", 1},
+    {"Potions", "Luck Potion II", "Aura", "Uncommon", 1},
+    {"Potions", "Luck Potion III", "Aura", "Uncommon", 1},
+    {"Potions", "Luck Potion III", "Aura", "Rare", 1},
+    {"Potions", "Luck Potion III", "Aura", "Natural", 1},
+    {"Potions", "Haste Potion II", "Aura", "Rare", 1},
+    {"Potions", "Stardust Potion", "Aura", "Lunar", 1},
+    {"Potions", "Stardust Potion", "Aura", "Life", 1},
+    {"Potions", "Stardust Potion", "Aura", "Asterium", 1},
+    {"Potions", "Stardust Potion", "Aura", "Divine", 1},
+    {"Potions", "Stardust Potion II", "Aura", "Crystal", 1},
+    {"Potions", "Stardust Potion II", "Aura", "Golden", 1},
+    {"Potions", "Stardust Potion II", "Aura", "Divine", 1}
+}
+
+-- Faster AutoCraft Loop (Batching multiple requests at once)
+task.spawn(function()
+    while _G.AutoCraft do
+        for _, args in ipairs(craftingItems) do
+            task.spawn(function() craftingRemote:InvokeServer(unpack(args)) end) -- Run multiple in parallel
+            if not _G.AutoCraft then break end
+        end
+        task.wait(0.1) -- Small delay to prevent lag or detection
+    end
+end)
+
+-- RequestRoll Loop (Runs every 0.1s)
+task.spawn(function()
+    while _G.AutoRoll do
+        requestRollRemote:InvokeServer(true)
+        cutsceneRemote:FireServer()
+        task.wait(0.1) -- Adjust delay if necessary
+    end
+end)
