@@ -24,7 +24,7 @@ local function sendDiscordNotification(biome)
     local message = "**Biome Changed!**\n\n"
     message = message .. "New Biome: **" .. biome .. "**"
     
-    if biome == "Snowy" then
+    if biome == "Snow" then
         message = "**❄️ SNOWY BIOME DETECTED! ❄️**"
     end
 
@@ -34,7 +34,7 @@ local function sendDiscordNotification(biome)
         ["embeds"] = {{
             ["title"] = "Biome Update",
             ["description"] = "The biome has changed to **" .. biome .. "**",
-            ["color"] = biome == "Snowy" and 3447003 or 16711680, -- Blue for Snowy, Red for others
+            ["color"] = biome == "Snow" and 3447003 or 16711680, -- Blue for Snowy, Red for others
             ["footer"] = {
                 ["text"] = "Biome Tracker",
             },
@@ -66,7 +66,7 @@ task.spawn(function()
             sendDiscordNotification(currentBiome)
             
             -- If biome is "Snowy", use the potion
-            if currentBiome == "Snowy" then
+            if currentBiome == "Snow" then
                 usePotion()
             end
         end
