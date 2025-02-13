@@ -83,7 +83,7 @@ end
 -- Function to use the potion 5 times
 local function usePotion()
     for i = 1, 5 do
-        local args = { "Luck Potion", 1 }
+        local args = { "Stardust Potion", 1 }
         remoteEvents:WaitForChild("Interact"):FireServer(unpack(args))
         wait(0.5)  -- Small delay between uses
     end
@@ -108,5 +108,5 @@ while true do
             end
         end
     end
-    wait(1)  -- Check every second
+    wait(0.5)  -- Check every second
 end
