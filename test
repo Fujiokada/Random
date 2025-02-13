@@ -1,0 +1,70 @@
+local player = game:GetService("Players").LocalPlayer
+local biomeLabel = player.PlayerGui.Main.GearInventory.Money.Map.Biome
+local remoteEvents = game:GetService("ReplicatedStorage"):WaitForChild("GetRemoteEvents"):WaitForChild("Backpack")
+
+local webhookURL = "https://discord.com/api/webhooks/1339427763555270718/5KBiqurMM4ct8Z73J4DNKGjsd_NfCFygM8RVPkiy-uEg5WfbkC0wlFvJNqGDnH_h-2aw"
+
+local lastBiome = nil  -- To track the previous biome
+
+-- Function to send a Discord notification
+local function sendDiscordNotification(oldBiome, newBiome)
+    local color = newBiome == "Glitch" and 16711935 or 3447003  -- Purple for "Glitch", Blue for others
+    local description = "**Biome changed from:** `" .. oldBiome .. "` **to** `" .. newBiome .. "`"
+
+    if newBiome == "Glitch" then
+        description = "@everyone 🚨 **RARE BIOME DETECTED!** 🚨\n" .. description
+    end
+
+    local data = {
+        ["username"] = "Biome Notifier",
+        ["embeds"] = {{
+            ["title"] = "**Biome Update**",
+            ["description"] = description,
+            ["color"] = color,
+            ["footer"] = { ["text"] = "Roblox Biome Notifier" },
+            ["timestamp"] = os.date("!%Y-%m-%dT%H:%M:%SZ")
+        }}
+    }
+
+    local jsonData = game:GetService("HttpService"):JSONEncode(data)
+
+    pcall(function()
+        syn.request({
+            Url = webhookURL,
+            Method = "POST",
+            Headers = { ["Content-Type"] = "application/json" },
+            Body = jsonData
+        })
+    end)
+end
+
+-- Function to use the potion 5 times
+local function usePotion()
+    for i = 1, 5 do
+        local args = { "Luck Potion", 1 }
+        remoteEvents:WaitForChild("Interact"):FireServer(unpack(args))
+        wait(0.5)  -- Small delay between uses
+    end
+end
+
+-- Biome monitoring loop
+while true do
+    local biomeText = biomeLabel.Text or biomeLabel.ContentText
+    if biomeText then
+        local biomeName = biomeText:match("%[ Biome: (.+) %]")  -- Extract biome name
+
+        if biomeName and biomeName ~= lastBiome then
+            if lastBiome then  -- Avoid sending on script start
+                sendDiscordNotification(lastBiome, biomeName)
+            end
+
+            lastBiome = biomeName  -- Update last biome
+
+            -- If "Glitch" biome appears, use the potion
+            if biomeName == "Glitch" then
+                usePotion()
+            end
+        end
+    end
+    wait(0.5)  -- Check every second
+end
