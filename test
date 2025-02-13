@@ -2,15 +2,30 @@ local player = game:GetService("Players").LocalPlayer
 local biomeLabel = player.PlayerGui.Main.GearInventory.Money.Map.Biome
 local remoteEvents = game:GetService("ReplicatedStorage"):WaitForChild("GetRemoteEvents"):WaitForChild("Backpack")
 
+local httpService = game:GetService("HttpService")
 local webhookURL = "https://discord.com/api/webhooks/1339427763555270718/5KBiqurMM4ct8Z73J4DNKGjsd_NfCFygM8RVPkiy-uEg5WfbkC0wlFvJNqGDnH_h-2aw"
 
-local lastBiome = nil  -- To track the previous biome
+-- Check for supported HTTP request function
+local httpRequest = syn and syn.request or request or http_request or fluxus.request
+if not httpRequest then
+    error("Your executor does not support HTTP requests.")
+end
 
--- Function to send a Discord notification
+local lastBiome = nil  -- Track last biome
+
+-- Function to determine color for embed
+local function getColorHex(biome)
+    if biome == "Glitch" then
+        return 16711935  -- Purple
+    else
+        return 3447003  -- Blue
+    end
+end
+
+-- Function to send Discord webhook notification
 local function sendDiscordNotification(oldBiome, newBiome)
-    local color = newBiome == "Glitch" and 16711935 or 3447003  -- Purple for "Glitch", Blue for others
     local description = "**Biome changed from:** `" .. oldBiome .. "` **to** `" .. newBiome .. "`"
-
+    
     if newBiome == "Glitch" then
         description = "@everyone 🚨 **RARE BIOME DETECTED!** 🚨\n" .. description
     end
@@ -20,22 +35,49 @@ local function sendDiscordNotification(oldBiome, newBiome)
         ["embeds"] = {{
             ["title"] = "**Biome Update**",
             ["description"] = description,
-            ["color"] = color,
-            ["footer"] = { ["text"] = "Roblox Biome Notifier" },
+            ["color"] = getColorHex(newBiome),
+            ["fields"] = {
+                {
+                    ["name"] = "Previous Biome",
+                    ["value"] = "`" .. oldBiome .. "`",
+                    ["inline"] = true
+                },
+                {
+                    ["name"] = "New Biome",
+                    ["value"] = "`" .. newBiome .. "`",
+                    ["inline"] = true
+                },
+                {
+                    ["name"] = "Timestamp",
+                    ["value"] = "<t:" .. os.time() .. ":R>",
+                    ["inline"] = true
+                }
+            },
+            ["footer"] = {
+                ["text"] = "Roblox Biome Notifier",
+                ["icon_url"] = "https://i.imgur.com/yqbGJC3.png"
+            },
             ["timestamp"] = os.date("!%Y-%m-%dT%H:%M:%SZ")
         }}
     }
 
-    local jsonData = game:GetService("HttpService"):JSONEncode(data)
+    local jsonData = httpService:JSONEncode(data)
 
-    pcall(function()
-        syn.request({
+    -- Send the webhook request
+    local success, err = pcall(function()
+        httpRequest({
             Url = webhookURL,
             Method = "POST",
             Headers = { ["Content-Type"] = "application/json" },
             Body = jsonData
         })
     end)
+
+    if success then
+        print("✅ Biome notification sent: " .. newBiome)
+    else
+        warn("❌ Failed to send biome notification: " .. tostring(err))
+    end
 end
 
 -- Function to use the potion 5 times
@@ -66,5 +108,5 @@ while true do
             end
         end
     end
-    wait(0.5)  -- Check every second
+    wait(1)  -- Check every second
 end
