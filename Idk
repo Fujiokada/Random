@@ -13,22 +13,23 @@ task.spawn(function()
         if obbyPrompt and not obbyPrompt.Enabled then
             obbyPrompt.Enabled = true
         end
-        task.wait() -- No delay for max speed
+        task.wait(0.1) -- Small delay to prevent performance issues
     end
 end)
 
--- **Fastest Possible Luck Stacking Loop**
+-- **Fast & Stable Luck Stacking Loop**
 task.spawn(function()
     while _G.StackLuckBoost do
         if hrp then
             hrp.CFrame = obbyBox.CFrame + Vector3.new(0, 3, 0) -- Instant teleport
         end
 
-        -- Fire the ProximityPrompt as fast as possible
-        for _ = 1, 100 do
-            task.spawn(function()
-                fireproximityprompt(obbyPrompt, 1)
-            end)
+        -- Fire ProximityPrompt in controlled bursts
+        for _ = 1, 25 do -- Reduced from 100 to 25 to prevent crashes
+            fireproximityprompt(obbyPrompt, 1)
+            task.wait(0.05) -- Tiny wait to avoid overloading the game
         end
+
+        task.wait(1) -- Small cooldown before next burst
     end
 end)
