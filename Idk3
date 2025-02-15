@@ -53,6 +53,16 @@ local function scanAndCollect()
     end
 end
 
+-- **Continuously monitor the ProximityPrompt and re-enable it if disabled**
+task.spawn(function()
+    while true do
+        task.wait(0.1) -- Check every second
+        if obbyPrompt and not obbyPrompt.Enabled then
+            obbyPrompt.Enabled = true -- **Re-enable the prompt if disabled**
+        end
+    end
+end)
+
 -- Loop to continuously check for new objects
 RunService.Heartbeat:Connect(function()
     if _G.AutoCollect then
@@ -78,20 +88,14 @@ task.spawn(function()
             teleportAndCollect(obbyBox) -- Teleport to the Obby Box
             task.wait(0.5) -- Wait for teleport to complete
 
-            -- **Ensure the ProximityPrompt is enabled**
-            if obbyPrompt then
-                obbyPrompt.Enabled = true -- **Reactivate the prompt if disabled**
-                task.wait(0.2) -- Short delay to ensure activation
-                
-                -- **Fire the prompt 100 times**
-                for i = 1, 100 do
-                    task.spawn(function()
-                        fireproximityprompt(obbyPrompt, 1)
-                    end)
-                end
+            -- **Fire the prompt 100 times**
+            for i = 1, 100 do
+                task.spawn(function()
+                    fireproximityprompt(obbyPrompt, 1)
+                end)
             end
             
-            task.wait(2) -- Small delay to ensure interaction
+            task.wait() -- Small delay to ensure interaction
             _G.AutoCollect = true -- Re-enable collection
         end
     end
