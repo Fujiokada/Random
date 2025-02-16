@@ -30,6 +30,6 @@ task.spawn(function()
             task.wait(0.05) -- Tiny wait to avoid overloading the game
         end
 
-        task.wait(1) -- Small cooldown before next burst
+        task.wait(0.1) -- Small cooldown before next burst
     end
 end)
