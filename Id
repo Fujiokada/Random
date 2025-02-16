@@ -1,0 +1,30 @@
+local Players = game:GetService("Players")
+local localPlayer = Players.LocalPlayer
+local character = localPlayer.Character or localPlayer.CharacterAdded:Wait()
+local hrp = character:WaitForChild("HumanoidRootPart") -- Get HumanoidRootPart for teleporting
+local obbyBox = workspace:WaitForChild("Obby Luck Platform"):WaitForChild("Model"):WaitForChild("Box")
+local obbyPrompt = obbyBox:WaitForChild("ProximityPrompt")
+
+_G.StackLuckBoost = true -- Toggleable
+
+task.spawn(function()
+    while _G.StackLuckBoost do
+        -- **Teleport to Obby Box**
+        if hrp then
+            hrp.CFrame = obbyBox.CFrame + Vector3.new(0, 3, 0) -- Hover slightly above the box
+        end
+
+        -- **Enable ProximityPrompt if Disabled**
+        if not obbyPrompt.Enabled then
+            obbyPrompt.Enabled = true
+        end
+
+        -- **Rapid-Fire Proximity Prompt**
+        for _ = 1, 10 do -- Fires 10 times per loop
+            fireproximityprompt(obbyPrompt, 1)
+            task.wait(0.02) -- Small delay to avoid overloading
+        end
+
+        task.wait(0.1) -- Brief pause before repeating
+    end
+end)
