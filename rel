@@ -1,0 +1,15 @@
+local ReplicatedStorage = game:GetService("ReplicatedStorage")
+local requestRollRemote = ReplicatedStorage:WaitForChild("GetRemoteEvents"):WaitForChild("RequestRoll")
+local cutsceneRemote = ReplicatedStorage:WaitForChild("GetRemoteEvents"):WaitForChild("Roll"):WaitForChild("CutsceneFinished")
+
+_G.AutoRoll = true  -- Toggle AutoRoll on/off
+
+task.spawn(function()
+    while _G.AutoRoll do
+        pcall(function()
+            requestRollRemote:InvokeServer(true) -- Request a roll
+            cutsceneRemote:FireServer() -- Skip cutscene
+        end)
+        task.wait() -- Prevents crashing & allows smooth execution
+    end
+end)
