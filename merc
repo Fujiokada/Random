@@ -1,0 +1,96 @@
+local player = game:GetService("Players").LocalPlayer
+local replicatedStorage = game:GetService("ReplicatedStorage")
+local httpService = game:GetService("HttpService")
+local starterGui = game:GetService("StarterGui")
+
+local webhookURL = "https://discord.com/api/webhooks/1339427763555270718/5KBiqurMM4ct8Z73J4DNKGjsd_NfCFygM8RVPkiy-uEg5WfbkC0wlFvJNqGDnH_h-2aw"
+local merchantFolder = game:GetService("Workspace"):WaitForChild("Merchant")
+local merchantSpawnsFolder = game:GetService("Workspace"):WaitForChild("MerchantSpawns")
+
+local httpRequest = syn and syn.request or request or http_request or fluxus.request
+if not httpRequest then
+    error("Your executor does not support HTTP requests.")
+end
+
+local function sendDiscordNotification(merchantPosition)
+    local data = {
+        ["username"] = "Merchant Notifier",
+        ["embeds"] = { {
+            ["title"] = "**Merchant Spawned!**",
+            ["description"] = "A new **Merchant** has appeared in the world!",
+            ["color"] = 16755200, -- Orange
+            ["fields"] = {
+                {
+                    ["name"] = "Position",
+                    ["value"] = string.format("X: %.2f, Y: %.2f, Z: %.2f", merchantPosition.X, merchantPosition.Y, merchantPosition.Z),
+                    ["inline"] = true
+                },
+                {
+                    ["name"] = "Timestamp",
+                    ["value"] = "<t:" .. os.time() .. ":R>",
+                    ["inline"] = true
+                }
+            },
+            ["footer"] = {
+                ["text"] = "Roblox Merchant Notifier",
+                ["icon_url"] = "https://i.imgur.com/yqbGJC3.png"
+            },
+            ["timestamp"] = os.date("!%Y-%m-%dT%H:%M:%SZ")
+        } }
+    }
+
+    local jsonData = httpService:JSONEncode(data)
+
+    local success, err = pcall(function()
+        httpRequest({
+            Url = webhookURL,
+            Method = "POST",
+            Headers = { ["Content-Type"] = "application/json" },
+            Body = jsonData
+        })
+    end)
+
+    if success then
+        print("✅ Merchant notification sent!")
+    else
+        warn("❌ Failed to send merchant notification: " .. tostring(err))
+    end
+end
+
+local function teleportToMerchant(position)
+    if player.Character and player.Character:FindFirstChild("HumanoidRootPart") then
+        player.Character.HumanoidRootPart.CFrame = CFrame.new(position)
+    end
+end
+
+local function showTeleportNotification(merchantPosition)
+    starterGui:SetCore("SendNotification", {
+        Title = "Merchant Spawned!",
+        Text = "A merchant has appeared! Teleport?",
+        Duration = 999999, -- Notification stays until interacted with
+        Button1 = "Yes",
+        Button2 = "No",
+        Callback = function(response)
+            if response == "Yes" then
+                teleportToMerchant(merchantPosition)
+            end
+        end
+    })
+end
+
+local function monitorMerchantFolder(folder)
+    folder.ChildAdded:Connect(function(child)
+        if child:IsA("Model") or child:IsA("MeshPart") or child:IsA("Part") then
+            local merchantPosition = child.Position or child:GetPivot().Position
+            print("🔔 Merchant detected at:", merchantPosition)
+            sendDiscordNotification(merchantPosition)
+            showTeleportNotification(merchantPosition)
+        end
+    end)
+end
+
+-- Start monitoring both folders
+monitorMerchantFolder(merchantFolder)
+monitorMerchantFolder(merchantSpawnsFolder)
+
+print("🚀 Merchant spawn detector is now running!")
