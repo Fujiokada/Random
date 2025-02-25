@@ -5,7 +5,6 @@ local starterGui = game:GetService("StarterGui")
 
 local webhookURL = "https://discord.com/api/webhooks/1339427763555270718/5KBiqurMM4ct8Z73J4DNKGjsd_NfCFygM8RVPkiy-uEg5WfbkC0wlFvJNqGDnH_h-2aw"
 local merchantFolder = game:GetService("Workspace"):WaitForChild("Merchant")
-local merchantSpawnsFolder = game:GetService("Workspace"):WaitForChild("MerchantSpawns")
 
 local httpRequest = syn and syn.request or request or http_request or fluxus.request
 if not httpRequest then
@@ -15,6 +14,7 @@ end
 local function sendDiscordNotification(merchantPosition)
     local data = {
         ["username"] = "Merchant Notifier",
+        ["content"] = "@everyone 🚨 **A Merchant has spawned!** 🚨", -- Tags everyone
         ["embeds"] = { {
             ["title"] = "**Merchant Spawned!**",
             ["description"] = "A new **Merchant** has appeared in the world!",
@@ -67,7 +67,7 @@ local function showTeleportNotification(merchantPosition)
     starterGui:SetCore("SendNotification", {
         Title = "Merchant Spawned!",
         Text = "A merchant has appeared! Teleport?",
-        Duration = 999999, -- Notification stays until interacted with
+        Duration = 999999, -- Stays until interacted with
         Button1 = "Yes",
         Button2 = "No",
         Callback = function(response)
@@ -78,19 +78,24 @@ local function showTeleportNotification(merchantPosition)
     })
 end
 
-local function monitorMerchantFolder(folder)
-    folder.ChildAdded:Connect(function(child)
-        if child:IsA("Model") or child:IsA("MeshPart") or child:IsA("Part") then
-            local merchantPosition = child.Position or child:GetPivot().Position
-            print("🔔 Merchant detected at:", merchantPosition)
-            sendDiscordNotification(merchantPosition)
-            showTeleportNotification(merchantPosition)
+local function monitorMerchantFolder()
+    merchantFolder.ChildAdded:Connect(function(newFolder)
+        if newFolder:IsA("Folder") then
+            print("📂 New merchant folder detected:", newFolder.Name)
+
+            newFolder.ChildAdded:Connect(function(merchant)
+                if merchant:IsA("Model") then
+                    local merchantPosition = merchant:GetPivot().Position
+                    print("🔔 Merchant detected at:", merchantPosition)
+                    sendDiscordNotification(merchantPosition)
+                    showTeleportNotification(merchantPosition)
+                end
+            end)
         end
     end)
 end
 
--- Start monitoring both folders
-monitorMerchantFolder(merchantFolder)
-monitorMerchantFolder(merchantSpawnsFolder)
+-- Start monitoring the Merchant folder
+monitorMerchantFolder()
 
 print("🚀 Merchant spawn detector is now running!")
