@@ -62,12 +62,22 @@ local function sendDiscordNotification()
 end
 
 local function teleportToMerchant()
-    if merchantPosition and player.Character and player.Character:FindFirstChild("HumanoidRootPart") then
-        player.Character.HumanoidRootPart.CFrame = CFrame.new(merchantPosition)
-        print("✅ Teleported to Merchant at:", merchantPosition)
-    else
-        warn("❌ Failed to teleport: Merchant position missing or player character not loaded.")
+    local merchantRoot = workspace:FindFirstChild("Merchant")
+    if merchantRoot then
+        local violetFolder = merchantRoot:FindFirstChild("Violet")
+        if violetFolder then
+            local merchantModel = violetFolder:FindFirstChild("MerchantModel")
+            if merchantModel then
+                local rootPart = merchantModel:FindFirstChild("HumanoidRootPart")
+                if rootPart and player.Character and player.Character:FindFirstChild("HumanoidRootPart") then
+                    player.Character.HumanoidRootPart.CFrame = rootPart.CFrame
+                    print("✅ Teleported to Merchant at:", rootPart.Position)
+                    return
+                end
+            end
+        end
     end
+    warn("❌ Failed to teleport: Could not find merchant’s HumanoidRootPart.")
 end
 
 local function showTeleportNotification()
@@ -87,18 +97,11 @@ end
 
 local function checkForMerchant(folder)
     folder.ChildAdded:Connect(function(merchant)
-        if merchant:IsA("Model") then
+        if merchant:IsA("Model") and merchant.Name == "MerchantModel" then
             task.wait(1) -- Small delay to ensure position is set
-            if merchant.PrimaryPart then
-                merchantPosition = merchant.PrimaryPart.Position
-            else
-                local rootPart = merchant:FindFirstChild("HumanoidRootPart") or merchant:FindFirstChildOfClass("BasePart")
-                if rootPart then
-                    merchantPosition = rootPart.Position
-                end
-            end
-
-            if merchantPosition then
+            local rootPart = merchant:FindFirstChild("HumanoidRootPart")
+            if rootPart then
+                merchantPosition = rootPart.Position
                 print("🔔 Merchant detected at:", merchantPosition)
                 sendDiscordNotification()
                 showTeleportNotification()
@@ -107,18 +110,11 @@ local function checkForMerchant(folder)
     end)
 
     for _, merchant in ipairs(folder:GetChildren()) do
-        if merchant:IsA("Model") then
+        if merchant:IsA("Model") and merchant.Name == "MerchantModel" then
             task.wait(1)
-            if merchant.PrimaryPart then
-                merchantPosition = merchant.PrimaryPart.Position
-            else
-                local rootPart = merchant:FindFirstChild("HumanoidRootPart") or merchant:FindFirstChildOfClass("BasePart")
-                if rootPart then
-                    merchantPosition = rootPart.Position
-                end
-            end
-
-            if merchantPosition then
+            local rootPart = merchant:FindFirstChild("HumanoidRootPart")
+            if rootPart then
+                merchantPosition = rootPart.Position
                 print("🔔 Existing Merchant detected at:", merchantPosition)
                 sendDiscordNotification()
                 showTeleportNotification()
