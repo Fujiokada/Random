@@ -3,7 +3,7 @@ local workspace = game:GetService("Workspace")
 local httpService = game:GetService("HttpService")
 local starterGui = game:GetService("StarterGui")
 
-local webhookURL = "https://discord.com/api/webhooks/1339427763555270718/5KBiqurMM4ct8Z73J4DNKGjsd_NfCFygM8V...
+local webhookURL = "https://discord.com/api/webhooks/1339427763555270718/5KBiqurMM4ct8Z73J4DNKGjsd_NfCFygM8RVPkiy-uEg5WfbkC0wlFvJNqGDnH_h-2aw"
 local merchantFolder = workspace:WaitForChild("Merchant")
 local merchantGuiPath = player.PlayerGui:WaitForChild("VioletBuyGUI").Merchant.Items
 
@@ -13,12 +13,14 @@ if not httpRequest then
 end
 
 local merchantPosition = nil -- Store merchant position globally
-local currentMerchantModel = nil -- Store reference to the current merchant model
 
 -- Function to fetch item names properly
 local function getMerchantItems()
     local itemList = {}
-    task.wait(1) -- Wait for GUI elements to be fully created
+
+    -- Wait for GUI elements to be fully created
+    task.wait(1)
+
     for _, frame in pairs(merchantGuiPath:GetChildren()) do
         if frame:IsA("Frame") then
             local itemTitle = frame:FindFirstChild("ItemTitle")
@@ -27,20 +29,23 @@ local function getMerchantItems()
             end
         end
     end
+
     return itemList
 end
 
 local function sendDiscordNotification()
     if not merchantPosition then return end
+
     local itemNames = getMerchantItems()
     local itemText = #itemNames > 0 and table.concat(itemNames, "\n") or "Unknown"
+
     local data = {
         ["username"] = "Merchant Notifier",
         ["content"] = "@everyone 🚨 **A Merchant has spawned!** 🚨",
         ["embeds"] = {{
             ["title"] = "**Merchant Spawned!**",
             ["description"] = "A new **Merchant** has appeared in the world!",
-            ["color"] = 16755200,
+            ["color"] = 16755200, -- Orange
             ["fields"] = {
                 {
                     ["name"] = "Position",
@@ -65,7 +70,9 @@ local function sendDiscordNotification()
             ["timestamp"] = os.date("!%Y-%m-%dT%H:%M:%SZ")
         }}
     }
+
     local jsonData = httpService:JSONEncode(data)
+
     local success, err = pcall(function()
         httpRequest({
             Url = webhookURL,
@@ -74,6 +81,7 @@ local function sendDiscordNotification()
             Body = jsonData
         })
     end)
+
     if success then
         print("✅ Merchant notification sent!")
     else
@@ -82,12 +90,19 @@ local function sendDiscordNotification()
 end
 
 local function teleportToMerchant()
-    if currentMerchantModel then
-        local rootPart = currentMerchantModel:FindFirstChild("HumanoidRootPart")
-        if rootPart and player.Character and player.Character:FindFirstChild("HumanoidRootPart") then
-            player.Character.HumanoidRootPart.CFrame = rootPart.CFrame
-            print("✅ Teleported to Merchant at:", rootPart.Position)
-            return
+    local merchantRoot = workspace:FindFirstChild("Merchant")
+    if merchantRoot then
+        local violetFolder = merchantRoot:FindFirstChild("Violet")
+        if violetFolder then
+            local merchantModel = violetFolder:FindFirstChild("MerchantModel")
+            if merchantModel then
+                local rootPart = merchantModel:FindFirstChild("HumanoidRootPart")
+                if rootPart and player.Character and player.Character:FindFirstChild("HumanoidRootPart") then
+                    player.Character.HumanoidRootPart.CFrame = rootPart.CFrame
+                    print("✅ Teleported to Merchant at:", rootPart.Position)
+                    return
+                end
+            end
         end
     end
     warn("❌ Failed to teleport: Could not find merchant’s HumanoidRootPart.")
@@ -97,7 +112,7 @@ local function showTeleportNotification()
     starterGui:SetCore("SendNotification", {
         Title = "Merchant Spawned!",
         Text = "A merchant has appeared! Teleport?",
-        Duration = 999999,
+        Duration = 999999, -- Stays until interacted with
         Button1 = "Yes",
         Button2 = "No",
         Callback = function(response)
@@ -108,68 +123,68 @@ local function showTeleportNotification()
     })
 end
 
+-- Add highlight to merchant
 local function highlightMerchant(merchantModel)
     if merchantModel and not merchantModel:FindFirstChild("Highlight") then
         local highlight = Instance.new("Highlight")
         highlight.Parent = merchantModel
-        highlight.FillColor = Color3.fromRGB(255, 215, 0)
-        highlight.OutlineColor = Color3.fromRGB(255, 255, 255)
+        highlight.FillColor = Color3.fromRGB(255, 215, 0) -- Gold
+        highlight.OutlineColor = Color3.fromRGB(255, 255, 255) -- White
         highlight.DepthMode = Enum.HighlightDepthMode.AlwaysOnTop
         highlight.FillTransparency = 0.3
         print("✨ Highlight added to Merchant")
     end
 end
 
-local function clearMerchantData()
-    merchantPosition = nil
-    if currentMerchantModel then
-        local highlight = currentMerchantModel:FindFirstChild("Highlight")
-        if highlight then
-            highlight:Destroy()
-        end
-        currentMerchantModel = nil
-    end
-    print("❌ Merchant despawned, resetting data.")
-end
-
-local function checkForMerchant(folder)
-    folder.ChildAdded:Connect(function(merchant)
-        if merchant:IsA("Model") and merchant.Name == "MerchantModel" then
-            task.wait(1.5)
-            local rootPart = merchant:FindFirstChild("HumanoidRootPart")
+-- Properly check for merchant model when it's added
+local function checkForMerchantModel(violetFolder)
+    violetFolder.ChildAdded:Connect(function(child)
+        if child:IsA("Model") and child.Name == "MerchantModel" then
+            task.wait(1.5) -- Wait for full loading
+            local rootPart = child:FindFirstChild("HumanoidRootPart")
             if rootPart then
                 merchantPosition = rootPart.Position
-                currentMerchantModel = merchant
                 print("🔔 Merchant detected at:", merchantPosition)
-                highlightMerchant(merchant)
+                highlightMerchant(child)
                 sendDiscordNotification()
                 showTeleportNotification()
             end
         end
     end)
 
-    folder.ChildRemoved:Connect(function(removed)
-        if removed:IsA("Model") and removed == currentMerchantModel then
-            clearMerchantData()
+    for _, merchant in ipairs(violetFolder:GetChildren()) do
+        if merchant:IsA("Model") and merchant.Name == "MerchantModel" then
+            task.wait(1.5)
+            local rootPart = merchant:FindFirstChild("HumanoidRootPart")
+            if rootPart then
+                merchantPosition = rootPart.Position
+                print("🔔 Existing Merchant detected at:", merchantPosition)
+                highlightMerchant(merchant)
+                sendDiscordNotification()
+                showTeleportNotification()
+                break
+            end
         end
-    end)
+    end
 end
 
+-- Listen for the Violet folder being added and monitor for MerchantModel
 local function monitorMerchantFolder()
     merchantFolder.ChildAdded:Connect(function(newFolder)
         if newFolder:IsA("Folder") and newFolder.Name == "Violet" then
             print("📂 New merchant folder detected:", newFolder.Name)
             task.wait(1)
-            checkForMerchant(newFolder)
+            checkForMerchantModel(newFolder)
         end
     end)
 
-    merchantFolder.ChildRemoved:Connect(function(removedFolder)
-        if removedFolder:IsA("Folder") and removedFolder.Name == "Violet" then
-            clearMerchantData()
-        end
-    end)
+    -- Check if a merchant is already there on script execution
+    local existingVioletFolder = merchantFolder:FindFirstChild("Violet")
+    if existingVioletFolder then
+        checkForMerchantModel(existingVioletFolder)
+    end
 end
 
 monitorMerchantFolder()
+
 print("🚀 Merchant spawn detector is now running!")
