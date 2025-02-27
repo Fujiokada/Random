@@ -7,18 +7,14 @@ local webhookURL = "https://discord.com/api/webhooks/1339427763555270718/5KBiqur
 local merchantFolder = workspace:WaitForChild("Merchant")
 local merchantGuiPath = player.PlayerGui:WaitForChild("VioletBuyGUI").Merchant.Items
 
-local httpRequest = syn and syn.request or request or http_request or fluxus.request
-if not httpRequest then
-    error("Your executor does not support HTTP requests.")
-end
+local merchantPosition = nil -- Store merchant position globally
 
-local merchantPosition = nil
-
--- Fetch item names
+-- Function to fetch item names properly
 local function getMerchantItems()
     local itemList = {}
 
-    task.wait(1) -- Ensure GUI loads
+    -- Wait for GUI elements to be fully created
+    task.wait(1)
 
     for _, frame in pairs(merchantGuiPath:GetChildren()) do
         if frame:IsA("Frame") then
@@ -32,7 +28,6 @@ local function getMerchantItems()
     return itemList
 end
 
--- Send Discord Webhook Notification
 local function sendDiscordNotification()
     if not merchantPosition then return end
 
@@ -42,16 +37,31 @@ local function sendDiscordNotification()
     local data = {
         ["username"] = "Merchant Notifier",
         ["content"] = "@everyone 🚨 **A Merchant has spawned!** 🚨",
-        ["embeds"] = { {
+        ["embeds"] = {{
             ["title"] = "**Merchant Spawned!**",
             ["description"] = "A new **Merchant** has appeared in the world!",
             ["color"] = 16755200, -- Orange
             ["fields"] = {
-                { ["name"] = "Position", ["value"] = string.format("X: %.2f, Y: %.2f, Z: %.2f", merchantPosition.X, merchantPosition.Y, merchantPosition.Z), ["inline"] = true },
-                { ["name"] = "Items for Sale", ["value"] = itemText, ["inline"] = false },
-                { ["name"] = "Timestamp", ["value"] = "<t:" .. os.time() .. ":R>", ["inline"] = true }
+                {
+                    ["name"] = "Position",
+                    ["value"] = string.format("X: %.2f, Y: %.2f, Z: %.2f", merchantPosition.X, merchantPosition.Y, merchantPosition.Z),
+                    ["inline"] = true
+                },
+                {
+                    ["name"] = "Items for Sale",
+                    ["value"] = itemText,
+                    ["inline"] = false
+                },
+                {
+                    ["name"] = "Timestamp",
+                    ["value"] = "<t:" .. os.time() .. ":R>",
+                    ["inline"] = true
+                }
             },
-            ["footer"] = { ["text"] = "Roblox Merchant Notifier", ["icon_url"] = "https://i.imgur.com/yqbGJC3.png" },
+            ["footer"] = {
+                ["text"] = "Roblox Merchant Notifier",
+                ["icon_url"] = "https://i.imgur.com/yqbGJC3.png"
+            },
             ["timestamp"] = os.date("!%Y-%m-%dT%H:%M:%SZ")
         }}
     }
@@ -59,12 +69,7 @@ local function sendDiscordNotification()
     local jsonData = httpService:JSONEncode(data)
 
     local success, err = pcall(function()
-        httpRequest({
-            Url = webhookURL,
-            Method = "POST",
-            Headers = { ["Content-Type"] = "application/json" },
-            Body = jsonData
-        })
+        httpService:PostAsync(webhookURL, jsonData, Enum.HttpContentType.ApplicationJson)
     end)
 
     if success then
@@ -74,9 +79,9 @@ local function sendDiscordNotification()
     end
 end
 
--- Find a valid teleport part in MerchantModel
+-- Find any valid teleport part inside the MerchantModel
 local function getTeleportPart(merchantModel)
-    for _, part in ipairs(merchantModel:GetChildren()) do
+    for _, part in ipairs(merchantModel:GetDescendants()) do
         if part:IsA("BasePart") then
             return part
         end
@@ -84,7 +89,7 @@ local function getTeleportPart(merchantModel)
     return nil
 end
 
--- Teleport to Merchant
+-- Teleport function
 local function teleportToMerchant()
     local merchantRoot = workspace:FindFirstChild("Merchant")
     if merchantRoot then
@@ -101,97 +106,83 @@ local function teleportToMerchant()
             end
         end
     end
-    warn("❌ Failed to teleport: No valid teleport part found.")
+    warn("❌ Failed to teleport: No valid part found in MerchantModel.")
 end
 
--- Custom Highlight (Outline for Entire Model)
-local function highlightMerchant(merchantModel)
-    for _, part in ipairs(merchantModel:GetChildren()) do
-        if part:IsA("BasePart") then
-            local highlight = Instance.new("SelectionBox")
-            highlight.Adornee = part
-            highlight.Color3 = Color3.fromRGB(255, 215, 0) -- Gold
-            highlight.SurfaceColor3 = Color3.fromRGB(255, 255, 255)
-            highlight.SurfaceTransparency = 0.2
-            highlight.LineThickness = 0.05
-            highlight.Parent = part
-        end
+-- Custom GUI for teleport decision
+local function createTeleportGui()
+    if player.PlayerGui:FindFirstChild("MerchantTeleportGui") then
+        player.PlayerGui.MerchantTeleportGui:Destroy()
     end
-    print("✨ Custom highlight added to Merchant")
-end
 
--- Custom GUI for Teleport
-local function createTeleportGUI()
-    local screenGui = Instance.new("ScreenGui", player.PlayerGui)
-    screenGui.Name = "MerchantTeleportGUI"
-    
-    local frame = Instance.new("Frame", screenGui)
-    frame.Size = UDim2.new(0, 250, 0, 100)
-    frame.Position = UDim2.new(0.5, -125, 0.65, 0)
-    frame.BackgroundColor3 = Color3.new(0, 0, 0)
-    frame.BorderSizePixel = 2
-    frame.BorderColor3 = Color3.new(1, 1, 1)
+    local screenGui = Instance.new("ScreenGui")
+    screenGui.Name = "MerchantTeleportGui"
+    screenGui.Parent = player.PlayerGui
 
-    local textLabel = Instance.new("TextLabel", frame)
+    local frame = Instance.new("Frame")
+    frame.Size = UDim2.new(0, 300, 0, 150)
+    frame.Position = UDim2.new(0.5, -150, 0.6, -75)
+    frame.BackgroundColor3 = Color3.fromRGB(0, 0, 0)
+    frame.BorderColor3 = Color3.fromRGB(255, 255, 255)
+    frame.Parent = screenGui
+
+    local textLabel = Instance.new("TextLabel")
     textLabel.Size = UDim2.new(1, 0, 0.5, 0)
-    textLabel.Text = "A Merchant has spawned! Teleport?"
-    textLabel.TextColor3 = Color3.new(1, 1, 1)
-    textLabel.Font = Enum.Font.Arcade -- Pixel font
-    textLabel.TextScaled = true
     textLabel.BackgroundTransparency = 1
+    textLabel.Text = "A merchant has appeared! Teleport?"
+    textLabel.TextColor3 = Color3.fromRGB(255, 255, 255)
+    textLabel.Font = Enum.Font.Pixelify
+    textLabel.TextScaled = true
+    textLabel.Parent = frame
 
-    local yesButton = Instance.new("TextButton", frame)
-    yesButton.Size = UDim2.new(0.5, -5, 0.4, 0)
-    yesButton.Position = UDim2.new(0, 5, 0.6, 0)
+    local yesButton = Instance.new("TextButton")
+    yesButton.Size = UDim2.new(0.4, 0, 0.3, 0)
+    yesButton.Position = UDim2.new(0.1, 0, 0.6, 0)
+    yesButton.BackgroundColor3 = Color3.fromRGB(0, 0, 0)
+    yesButton.BorderColor3 = Color3.fromRGB(255, 255, 255)
     yesButton.Text = "Yes"
-    yesButton.TextColor3 = Color3.new(1, 1, 1)
-    yesButton.Font = Enum.Font.Arcade
+    yesButton.TextColor3 = Color3.fromRGB(255, 255, 255)
+    yesButton.Font = Enum.Font.Pixelify
     yesButton.TextScaled = true
-    yesButton.BackgroundColor3 = Color3.new(0, 0, 0)
-    yesButton.BorderSizePixel = 2
-    yesButton.BorderColor3 = Color3.new(1, 1, 1)
+    yesButton.Parent = frame
 
-    local noButton = Instance.new("TextButton", frame)
-    noButton.Size = UDim2.new(0.5, -5, 0.4, 0)
-    noButton.Position = UDim2.new(0.5, 5, 0.6, 0)
+    local noButton = Instance.new("TextButton")
+    noButton.Size = UDim2.new(0.4, 0, 0.3, 0)
+    noButton.Position = UDim2.new(0.5, 0, 0.6, 0)
+    noButton.BackgroundColor3 = Color3.fromRGB(0, 0, 0)
+    noButton.BorderColor3 = Color3.fromRGB(255, 255, 255)
     noButton.Text = "No"
-    noButton.TextColor3 = Color3.new(1, 1, 1)
-    noButton.Font = Enum.Font.Arcade
+    noButton.TextColor3 = Color3.fromRGB(255, 255, 255)
+    noButton.Font = Enum.Font.Pixelify
     noButton.TextScaled = true
-    noButton.BackgroundColor3 = Color3.new(0, 0, 0)
-    noButton.BorderSizePixel = 2
-    noButton.BorderColor3 = Color3.new(1, 1, 1)
-
-    local function closeGUI()
-        screenGui:Destroy()
-    end
+    noButton.Parent = frame
 
     yesButton.MouseButton1Click:Connect(function()
         teleportToMerchant()
-        closeGUI()
+        screenGui:Destroy()
     end)
 
-    noButton.MouseButton1Click:Connect(closeGUI)
+    noButton.MouseButton1Click:Connect(function()
+        screenGui:Destroy()
+    end)
 
-    task.delay(180, closeGUI)
-end
-
-local function checkForMerchant(folder)
-    folder.ChildAdded:Connect(function(merchant)
-        if merchant:IsA("Model") and merchant.Name == "MerchantModel" then
-            task.wait(1.5)
-            merchantPosition = getTeleportPart(merchant).Position
-            highlightMerchant(merchant)
-            sendDiscordNotification()
-            createTeleportGUI()
+    task.delay(180, function()
+        if screenGui then
+            screenGui:Destroy()
         end
     end)
 end
 
+-- Monitor merchant folder
 merchantFolder.ChildAdded:Connect(function(newFolder)
     if newFolder:IsA("Folder") and newFolder.Name == "Violet" then
         task.wait(1)
-        checkForMerchant(newFolder)
+        local merchantModel = newFolder:FindFirstChild("MerchantModel")
+        if merchantModel then
+            merchantPosition = getTeleportPart(merchantModel) and getTeleportPart(merchantModel).Position
+            sendDiscordNotification()
+            createTeleportGui()
+        end
     end
 end)
 
