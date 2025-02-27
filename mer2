@@ -2,10 +2,12 @@ local player = game:GetService("Players").LocalPlayer
 local workspace = game:GetService("Workspace")
 local httpService = game:GetService("HttpService")
 local starterGui = game:GetService("StarterGui")
+local replicatedStorage = game:GetService("ReplicatedStorage")
 
 local webhookURL = "https://discord.com/api/webhooks/1339427763555270718/5KBiqurMM4ct8Z73J4DNKGjsd_NfCFygM8RVPkiy-uEg5WfbkC0wlFvJNqGDnH_h-2aw"
 local merchantFolder = workspace:WaitForChild("Merchant")
 local merchantGUI = player.PlayerGui:WaitForChild("VioletBuyGUI"):WaitForChild("Merchant"):WaitForChild("Items")
+local buyRemote = replicatedStorage.GetRemoteEvents.Merchants.BuyMerchantItem
 
 local httpRequest = syn and syn.request or request or http_request or fluxus.request
 if not httpRequest then
@@ -13,21 +15,31 @@ if not httpRequest then
 end
 
 local merchantPosition = nil
+local whitelist = { "Item1", "Item2", "Item3" } -- Add actual whitelisted item names here
 
 local function getMerchantItems()
     local items = {}
+    local buyArgs = {} -- Store arguments for auto-buying
+
     for _, frame in pairs(merchantGUI:GetChildren()) do
         if frame:IsA("Frame") and frame:FindFirstChild("ItemTitle") then
-            table.insert(items, frame.ItemTitle.Text)
+            local itemName = frame.ItemTitle.Text
+            table.insert(items, itemName)
+
+            -- Check if the item is in the whitelist for auto-buying
+            if table.find(whitelist, itemName) then
+                table.insert(buyArgs, frame.Name) -- Store frame name (random ID) for buying
+            end
         end
     end
-    return items
+
+    return items, buyArgs
 end
 
 local function sendDiscordNotification()
     if not merchantPosition then return end
 
-    local items = getMerchantItems()
+    local items, buyArgs = getMerchantItems()
     local itemList = ""
     for _, itemName in ipairs(items) do
         itemList = itemList .. "- `" .. itemName .. "`\n"
@@ -80,6 +92,12 @@ local function sendDiscordNotification()
         print("✅ Merchant notification sent!")
     else
         warn("❌ Failed to send merchant notification: " .. tostring(err))
+    end
+
+    -- Auto-buy whitelisted items
+    for _, frameName in ipairs(buyArgs) do
+        buyRemote:FireServer(frameName)
+        print("🛒 Purchased:", frameName)
     end
 end
 
