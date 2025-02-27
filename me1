@@ -5,44 +5,33 @@ local starterGui = game:GetService("StarterGui")
 
 local webhookURL = "https://discord.com/api/webhooks/1339427763555270718/5KBiqurMM4ct8Z73J4DNKGjsd_NfCFygM8RVPkiy-uEg5WfbkC0wlFvJNqGDnH_h-2aw"
 local merchantFolder = workspace:WaitForChild("Merchant")
-local merchantGUI = player.PlayerGui:WaitForChild("VioletBuyGUI"):WaitForChild("Merchant"):WaitForChild("Items")
+local merchantGuiPath = player.PlayerGui:WaitForChild("VioletBuyGUI").Merchant.Items
 
 local httpRequest = syn and syn.request or request or http_request or fluxus.request
 if not httpRequest then
     error("Your executor does not support HTTP requests.")
 end
 
-local merchantPosition = nil
+local merchantPosition = nil -- Store merchant position globally
 
 local function getMerchantItems()
-    local items = {}
-
-    -- Wait for the items to appear in the GUI
-    local timeout = 10 -- Max time to wait (seconds)
-    local elapsed = 0
-    while #merchantGUI:GetChildren() == 0 and elapsed < timeout do
-        task.wait(0.5)
-        elapsed = elapsed + 0.5
-    end
-
-    for _, frame in pairs(merchantGUI:GetChildren()) do
-        if frame:IsA("Frame") and frame:FindFirstChild("ItemTitle") then
-            local itemName = frame.ItemTitle.Text
-            table.insert(items, itemName)
+    local itemList = {}
+    for _, frame in pairs(merchantGuiPath:GetChildren()) do
+        if frame:IsA("Frame") then
+            local itemTitle = frame:FindFirstChild("ItemTitle")
+            if itemTitle and itemTitle:IsA("TextLabel") and itemTitle.Text ~= "" then
+                table.insert(itemList, itemTitle.Text)
+            end
         end
     end
-
-    return items
+    return itemList
 end
 
 local function sendDiscordNotification()
     if not merchantPosition then return end
 
-    local items = getMerchantItems()
-    local itemList = ""
-    for _, itemName in ipairs(items) do
-        itemList = itemList .. "- `" .. itemName .. "`\n"
-    end
+    local itemNames = getMerchantItems()
+    local itemText = #itemNames > 0 and table.concat(itemNames, "\n") or "Unknown"
 
     local data = {
         ["username"] = "Merchant Notifier",
@@ -58,14 +47,14 @@ local function sendDiscordNotification()
                     ["inline"] = true
                 },
                 {
+                    ["name"] = "Items for Sale",
+                    ["value"] = itemText,
+                    ["inline"] = false
+                },
+                {
                     ["name"] = "Timestamp",
                     ["value"] = "<t:" .. os.time() .. ":R>",
                     ["inline"] = true
-                },
-                {
-                    ["name"] = "Available Items",
-                    ["value"] = itemList ~= "" and itemList or "Unknown (Items may not have loaded yet)",
-                    ["inline"] = false
                 }
             },
             ["footer"] = {
@@ -117,7 +106,7 @@ local function showTeleportNotification()
     starterGui:SetCore("SendNotification", {
         Title = "Merchant Spawned!",
         Text = "A merchant has appeared! Teleport?",
-        Duration = 999999,
+        Duration = 999999, -- Stays until interacted with
         Button1 = "Yes",
         Button2 = "No",
         Callback = function(response)
@@ -131,7 +120,7 @@ end
 local function checkForMerchant(folder)
     folder.ChildAdded:Connect(function(merchant)
         if merchant:IsA("Model") and merchant.Name == "MerchantModel" then
-            task.wait(1)
+            task.wait(1) -- Small delay to ensure position is set
             local rootPart = merchant:FindFirstChild("HumanoidRootPart")
             if rootPart then
                 merchantPosition = rootPart.Position
