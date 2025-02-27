@@ -17,6 +17,14 @@ local merchantPosition = nil
 local function getMerchantItems()
     local items = {}
 
+    -- Wait for the items to appear in the GUI
+    local timeout = 10 -- Max time to wait (seconds)
+    local elapsed = 0
+    while #merchantGUI:GetChildren() == 0 and elapsed < timeout do
+        task.wait(0.5)
+        elapsed = elapsed + 0.5
+    end
+
     for _, frame in pairs(merchantGUI:GetChildren()) do
         if frame:IsA("Frame") and frame:FindFirstChild("ItemTitle") then
             local itemName = frame.ItemTitle.Text
@@ -56,7 +64,7 @@ local function sendDiscordNotification()
                 },
                 {
                     ["name"] = "Available Items",
-                    ["value"] = itemList ~= "" and itemList or "Unknown",
+                    ["value"] = itemList ~= "" and itemList or "Unknown (Items may not have loaded yet)",
                     ["inline"] = false
                 }
             },
