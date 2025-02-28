@@ -1,0 +1,506 @@
+local ReplicatedStorage = game:GetService("ReplicatedStorage")
+local craftingRemote = ReplicatedStorage:WaitForChild("GetRemoteEvents"):WaitForChild("Crafting"):WaitForChild("AddItem")
+local requestRollRemote = ReplicatedStorage:WaitForChild("GetRemoteEvents"):WaitForChild("RequestRoll")
+local cutsceneRemote = ReplicatedStorage:WaitForChild("GetRemoteEvents"):WaitForChild("Roll"):WaitForChild("CutsceneFinished")
+
+_G.AutoCraft = true -- Toggle for crafting loop
+_G.AutoRoll = true -- Toggle for rolling loop
+
+local craftingItems = {
+    {"Potions", "Luck Potion", "Aura", "Natural", 1},
+    {"Potions", "Luck Potion II", "Aura", "Lucky", 1},
+    {"Potions", "Luck Potion II", "Aura", "Rare", 1},
+    {"Potions", "Luck Potion III", "Aura", "Golden", 1},
+    {"Potions", "Haste Potion", "Aura", "Electric", 1},
+    {"Potions", "Haste Potion II", "Aura", "Windy", 1},
+    {"Potions", "Haste Potion II", "Aura", "Uncommon", 1},
+    {"Potions", "Luck Potion II", "Aura", "Uncommon", 1},
+    {"Potions", "Luck Potion III", "Aura", "Uncommon", 1},
+    {"Potions", "Luck Potion III", "Aura", "Rare", 1},
+    {"Potions", "Luck Potion III", "Aura", "Natural", 1},
+    {"Potions", "Haste Potion II", "Aura", "Rare", 1},
+    {"Potions", "Stardust Potion", "Aura", "Lunar", 1},
+    {"Potions", "Stardust Potion", "Aura", "Life", 1},
+    {"Potions", "Stardust Potion", "Aura", "Asterium", 1},
+    {"Potions", "Stardust Potion", "Aura", "Divine", 1},
+    {"Potions", "Stardust Potion II", "Aura", "Crystal", 1},
+    {"Potions", "Stardust Potion II", "Aura", "Golden", 1},
+    {"Potions", "Stardust Potion II", "Aura", "Divine", 1}
+}
+
+-- Faster AutoCraft Loop (Batching multiple requests at once)
+task.spawn(function()
+    while _G.AutoCraft do
+        for _, args in ipairs(craftingItems) do
+            task.spawn(function() craftingRemote:InvokeServer(unpack(args)) end) -- Run multiple in parallel
+            if not _G.AutoCraft then break end
+        end
+        task.wait(0.1) -- Small delay to prevent lag or detection
+    end
+end)
+
+-- RequestRoll Loop (Runs every 0.1s)
+task.spawn(function()
+    while _G.AutoRoll do
+        requestRollRemote:InvokeServer(true)
+        cutsceneRemote:FireServer()
+        task.wait() -- Adjust delay if necessary
+    end
+end)
+
+local Players = game:GetService("Players")
+local RunService = game:GetService("RunService")
+local localPlayer = Players.LocalPlayer
+local character = localPlayer.Character or localPlayer.CharacterAdded:Wait()
+local humanoid = character:WaitForChild("Humanoid") -- Get the humanoid
+local objectsFolder = workspace:WaitForChild("NaturalIemSpawn"):WaitForChild("Objects")
+local obbyBox = workspace:WaitForChild("Obby Luck Platform"):WaitForChild("Model"):WaitForChild("Box")
+local obbyPrompt = obbyBox:WaitForChild("ProximityPrompt")
+
+_G.AutoCollect = true -- Toggleable
+
+-- **Function to Unsit the Player Before Teleporting**
+local function forceUnsit()
+    if humanoid.Sit then
+        humanoid.Sit = false -- Force stand up
+        task.wait(0.1) -- Small delay to stabilize
+    end
+end
+
+-- **Function to Disable All Seats in the Game (Prevents Auto-Sitting)**
+local function disableSeats()
+    for _, seat in ipairs(workspace:GetDescendants()) do
+        if seat:IsA("Seat") or seat:IsA("VehicleSeat") then
+            seat.Disabled = true -- Disable seating
+        end
+    end
+end
+
+disableSeats() -- Run this once at the start
+
+local function teleportAndCollect(object)
+    local hrp = character:FindFirstChild("HumanoidRootPart")
+    if hrp and object:IsA("BasePart") then
+        forceUnsit() -- **Ensure player is not sitting**
+        hrp.CFrame = object.CFrame + Vector3.new(0, 3, 0) -- Teleport slightly above
+
+        -- Wait a moment for teleport to fully register
+        task.wait(0.5)
+
+        -- Fire the ProximityPrompt if it exists
+        local prompt = object:FindFirstChildOfClass("ProximityPrompt")
+        if prompt then
+            fireproximityprompt(prompt, 1) -- Ensure it gets triggered
+        end
+    end
+end
+
+local function scanAndCollect()
+    for _, object in ipairs(objectsFolder:GetChildren()) do
+        if _G.AutoCollect and (object:IsA("UnionOperation") or object:IsA("Part") or object:IsA("MeshPart")) then
+            teleportAndCollect(object)
+        end
+    end
+end
+
+-- Loop to continuously check for new objects
+RunService.Heartbeat:Connect(function()
+    if _G.AutoCollect then
+        scanAndCollect()
+    end
+end)
+
+-- Detect new objects being added
+objectsFolder.ChildAdded:Connect(function(object)
+    task.wait(0.1)
+    if _G.AutoCollect then
+        teleportAndCollect(object)
+    end
+end)
+
+-- **Teleport to the Obby Luck Box every 1 minute and fire its ProximityPrompt**
+task.spawn(function()
+    while true do
+        task.wait(60) -- Wait 1 minute
+
+        if _G.AutoCollect then
+            _G.AutoCollect = false -- Disable collection during teleport
+            teleportAndCollect(obbyBox) -- Teleport to the Obby Box
+            task.wait(0.5) -- Wait for teleport to complete
+
+            -- **Manually trigger the ProximityPrompt**
+            if obbyPrompt then
+                fireproximityprompt(obbyPrompt, 1) -- Ensure activation
+            end
+            
+            task.wait(2) -- Small delay to ensure interaction
+            _G.AutoCollect = true -- Re-enable collection
+        end
+    end
+end)
+
+local ReplicatedStorage = game:GetService("ReplicatedStorage")
+local Players = game:GetService("Players")
+local LocalPlayer = Players.LocalPlayer
+local craftingRemote = ReplicatedStorage:WaitForChild("GetRemoteEvents"):WaitForChild("Crafting"):WaitForChild("Craft")
+local addItemRemote = ReplicatedStorage:WaitForChild("GetRemoteEvents"):WaitForChild("Crafting"):WaitForChild("AddItem")
+
+_G.AutoBrew = true -- Toggle for potion crafting loop
+
+local potionRecipes = {
+    ["Haste Potion"] = { Auras = { Electric = 2 } },
+    ["Haste Potion II"] = { 
+        Auras = { Rare = 4, Uncommon = 7, Windy = 1 }, 
+        Items = { ["Haste Potion"] = 5 } 
+    },
+    ["Luck Potion"] = { Auras = { Natural = 3 } },
+    ["Luck Potion II"] = { 
+        Auras = { Lucky = 1, Rare = 1, Uncommon = 3 }, 
+        Items = { ["Luck Potion"] = 3 } 
+    },
+    ["Luck Potion III"] = { 
+        Auras = { Golden = 2, Natural = 1, Rare = 3, Uncommon = 10 }, 
+        Items = { ["Luck Potion II"] = 3 } -- Fixed missing comma before this line
+    },
+    ["Stardust Potion"] = { 
+        Auras = { Asterium = 1, Divine = 15, Life = 3, Lunar = 5 }, 
+        Items = { ["Luck Potion"] = 100 } 
+    },
+    ["Stardust Potion II"] = { 
+        Auras = { Crystal = 5, Divine = 100, Golden = 25, Stardust = 1 }
+    }
+}
+
+local function checkAndCraftPotions()
+    while _G.AutoBrew do
+        for potionName, recipe in pairs(potionRecipes) do
+            local potionPath = LocalPlayer.Crafting.Potions:FindFirstChild(potionName)
+            if potionPath then
+                local canCraft = true
+                
+                -- Check aura requirements
+                for auraName, requiredAmount in pairs(recipe.Auras or {}) do
+                    local auraPath = potionPath:FindFirstChild("Aura") and potionPath.Aura:FindFirstChild(auraName)
+                    if not auraPath or auraPath.Value < requiredAmount then
+                        canCraft = false
+                        break
+                    end
+                end
+                
+                -- Check and add missing items (except for Stardust Potion II)
+                if potionName ~= "Stardust Potion II" then
+                    for itemName, requiredAmount in pairs(recipe.Items or {}) do
+                        local itemPath = potionPath:FindFirstChild("Item") and potionPath.Item:FindFirstChild(itemName)
+                        local currentAmount = itemPath and itemPath.Value or 0
+                        if currentAmount < requiredAmount then
+                            local missingAmount = requiredAmount - currentAmount
+                            local args = { "Potions", potionName, "Item", itemName, missingAmount }
+                            addItemRemote:InvokeServer(unpack(args))
+                        end
+                    end
+                end
+                
+                -- Fire crafting remote if all requirements are met
+                if canCraft then
+                    craftingRemote:InvokeServer("Potions", potionName)
+                end
+            end
+        end
+        task.wait() -- Check every 0.1 seconds
+    end
+end
+
+task.spawn(checkAndCraftPotions)
+
+local player = game:GetService("Players").LocalPlayer
+local biomeLabel = player.PlayerGui.Main.GearInventory.Money.Map.Biome
+local httpService = game:GetService("HttpService")
+local webhookURL = "https://discord.com/api/webhooks/1339427763555270718/5KBiqurMM4ct8Z73J4DNKGjsd_NfCFygM8RVPkiy-uEg5WfbkC0wlFvJNqGDnH_h-2aw"
+
+-- Check for supported HTTP request function
+local httpRequest = syn and syn.request or request or http_request or fluxus.request
+if not httpRequest then
+    error("Your executor does not support HTTP requests.")
+end
+
+local lastBiome = nil  -- Track last biome
+local rareBiomes = { "Glitch", "Astral" }  -- List of rare biomes
+
+-- Function to determine color for embed
+local function getColorHex(biome)
+    if biome == "Glitch" then
+        return 16711935  -- Purple
+    elseif biome == "Astral" then
+        return 16760576  -- Light blue
+    else
+        return 3447003  -- Default blue
+    end
+end
+
+-- Function to send Discord webhook notification
+local function sendDiscordNotification(oldBiome, newBiome)
+    local description = "**Biome changed from:** `" .. oldBiome .. "` **to** `" .. newBiome .. "`"
+    
+    if table.find(rareBiomes, newBiome) then
+        description = "@everyone 🚨 **RARE BIOME DETECTED!** 🚨\n" .. description
+    end
+
+    local data = {
+        ["username"] = "Biome Notifier",
+        ["embeds"] = { {
+            ["title"] = "**Biome Update**",
+            ["description"] = description,
+            ["color"] = getColorHex(newBiome),
+            ["fields"] = {
+                { ["name"] = "Previous Biome", ["value"] = "`" .. oldBiome .. "`", ["inline"] = true },
+                { ["name"] = "New Biome", ["value"] = "`" .. newBiome .. "`", ["inline"] = true },
+                { ["name"] = "Timestamp", ["value"] = "<t:" .. os.time() .. ":R>", ["inline"] = true }
+            },
+            ["footer"] = { ["text"] = "Roblox Biome Notifier" },
+            ["timestamp"] = os.date("!%Y-%m-%dT%H:%M:%SZ")
+        } }
+    }
+
+    local jsonData = httpService:JSONEncode(data)
+
+    -- Send the webhook request
+    local success, err = pcall(function()
+        httpRequest({
+            Url = webhookURL,
+            Method = "POST",
+            Headers = { ["Content-Type"] = "application/json" },
+            Body = jsonData
+        })
+    end)
+
+    if success then
+        print("✅ Biome notification sent: " .. newBiome)
+    else
+        warn("❌ Failed to send biome notification: " .. tostring(err))
+    end
+end
+
+-- Biome monitoring loop
+while true do
+    local biomeText = biomeLabel.Text or biomeLabel.ContentText
+    if biomeText then
+        local biomeName = biomeText:match("%[ Biome: (.+) %]")  -- Extract biome name
+
+        if biomeName and biomeName ~= lastBiome then
+            if lastBiome then  -- Avoid sending on script start
+                sendDiscordNotification(lastBiome, biomeName)
+            end
+
+            lastBiome = biomeName  -- Update last biome
+        end
+    end
+    wait(0.5)  -- Check every 0.5 seconds
+end
+
+local isActive = true -- Set to true to start, false to stop
+
+task.spawn(function()
+    while true do
+        if isActive then
+            for i = 1, 10 do
+                if not isActive then break end -- Stop immediately if toggled off
+                
+                local args = {
+                    [1] = i
+                }
+
+                game:GetService("ReplicatedStorage"):WaitForChild("GetRemoteEvents"):WaitForChild("Merchants"):WaitForChild("BuyMerchantItem"):InvokeServer(unpack(args))
+
+                task.wait(0.01) -- Wait 0.1 seconds before the next iteration
+            end
+        else
+            task.wait(0.01) -- Prevents high CPU usage when inactive
+        end
+    end
+end)
+
+local player = game:GetService("Players").LocalPlayer
+local workspace = game:GetService("Workspace")
+local httpService = game:GetService("HttpService")
+local starterGui = game:GetService("StarterGui")
+
+local webhookURL = "https://discord.com/api/webhooks/1339427763555270718/5KBiqurMM4ct8Z73J4DNKGjsd_NfCFygM8RVPkiy-uEg5WfbkC0wlFvJNqGDnH_h-2aw"
+local merchantFolder = workspace:WaitForChild("Merchant")
+local merchantGuiPath = player.PlayerGui:WaitForChild("VioletBuyGUI").Merchant.Items
+
+local httpRequest = syn and syn.request or request or http_request or fluxus.request
+if not httpRequest then
+    error("Your executor does not support HTTP requests.")
+end
+
+local merchantPosition = nil -- Store merchant position globally
+
+-- Function to fetch item names properly
+local function getMerchantItems()
+    local itemList = {}
+
+    -- Wait for GUI elements to be fully created
+    task.wait(1)
+
+    for _, frame in pairs(merchantGuiPath:GetChildren()) do
+        if frame:IsA("Frame") then
+            local itemTitle = frame:FindFirstChild("ItemTitle")
+            if itemTitle and itemTitle:IsA("TextLabel") and itemTitle.Text ~= "" then
+                table.insert(itemList, itemTitle.Text)
+            end
+        end
+    end
+
+    return itemList
+end
+
+local function sendDiscordNotification()
+    if not merchantPosition then return end
+
+    local itemNames = getMerchantItems()
+    local itemText = #itemNames > 0 and table.concat(itemNames, "\n") or "Unknown"
+
+    local data = {
+        ["username"] = "Merchant Notifier",
+        ["content"] = "@everyone 🚨 **A Merchant has spawned!** 🚨",
+        ["embeds"] = {{
+            ["title"] = "**Merchant Spawned!**",
+            ["description"] = "A new **Merchant** has appeared in the world!",
+            ["color"] = 16755200, -- Orange
+            ["fields"] = {
+                {
+                    ["name"] = "Position",
+                    ["value"] = string.format("X: %.2f, Y: %.2f, Z: %.2f", merchantPosition.X, merchantPosition.Y, merchantPosition.Z),
+                    ["inline"] = true
+                },
+                {
+                    ["name"] = "Items for Sale",
+                    ["value"] = itemText,
+                    ["inline"] = false
+                },
+                {
+                    ["name"] = "Timestamp",
+                    ["value"] = "<t:" .. os.time() .. ":R>",
+                    ["inline"] = true
+                }
+            },
+            ["footer"] = {
+                ["text"] = "Roblox Merchant Notifier",
+                ["icon_url"] = "https://i.imgur.com/yqbGJC3.png"
+            },
+            ["timestamp"] = os.date("!%Y-%m-%dT%H:%M:%SZ")
+        }}
+    }
+
+    local jsonData = httpService:JSONEncode(data)
+
+    local success, err = pcall(function()
+        httpRequest({
+            Url = webhookURL,
+            Method = "POST",
+            Headers = { ["Content-Type"] = "application/json" },
+            Body = jsonData
+        })
+    end)
+
+    if success then
+        print("✅ Merchant notification sent!")
+    else
+        warn("❌ Failed to send merchant notification: " .. tostring(err))
+    end
+end
+
+local function teleportToMerchant()
+    local merchantRoot = workspace:FindFirstChild("Merchant")
+    if merchantRoot then
+        local violetFolder = merchantRoot:FindFirstChild("Violet")
+        if violetFolder then
+            local merchantModel = violetFolder:FindFirstChild("MerchantModel")
+            if merchantModel then
+                local rootPart = merchantModel:FindFirstChild("HumanoidRootPart")
+                if rootPart and player.Character and player.Character:FindFirstChild("HumanoidRootPart") then
+                    player.Character.HumanoidRootPart.CFrame = rootPart.CFrame
+                    print("✅ Teleported to Merchant at:", rootPart.Position)
+                    return
+                end
+            end
+        end
+    end
+    warn("❌ Failed to teleport: Could not find merchant’s HumanoidRootPart.")
+end
+
+local function showTeleportNotification()
+    starterGui:SetCore("SendNotification", {
+        Title = "Merchant Spawned!",
+        Text = "A merchant has appeared! Teleport?",
+        Duration = 999999, -- Stays until interacted with
+        Button1 = "Yes",
+        Button2 = "No",
+        Callback = function(response)
+            if response == "Yes" then
+                teleportToMerchant()
+            end
+        end
+    })
+end
+
+-- Add highlight to merchant
+local function highlightMerchant(merchantModel)
+    if merchantModel and not merchantModel:FindFirstChild("Highlight") then
+        local highlight = Instance.new("Highlight")
+        highlight.Parent = merchantModel
+        highlight.FillColor = Color3.fromRGB(255, 215, 0) -- Gold
+        highlight.OutlineColor = Color3.fromRGB(255, 255, 255) -- White
+        highlight.DepthMode = Enum.HighlightDepthMode.AlwaysOnTop
+        highlight.FillTransparency = 0.3
+        print("✨ Highlight added to Merchant")
+    end
+end
+
+local function checkForMerchant(folder)
+    folder.ChildAdded:Connect(function(merchant)
+        if merchant:IsA("Model") and merchant.Name == "MerchantModel" then
+            task.wait(1.5) -- Wait for full loading
+            local rootPart = merchant:FindFirstChild("HumanoidRootPart")
+            if rootPart then
+                merchantPosition = rootPart.Position
+                print("🔔 Merchant detected at:", merchantPosition)
+                highlightMerchant(merchant)
+                sendDiscordNotification()
+                showTeleportNotification()
+            end
+        end
+    end)
+
+    for _, merchant in ipairs(folder:GetChildren()) do
+        if merchant:IsA("Model") and merchant.Name == "MerchantModel" then
+            task.wait(1.5) -- Wait for full loading
+            local rootPart = merchant:FindFirstChild("HumanoidRootPart")
+            if rootPart then
+                merchantPosition = rootPart.Position
+                print("🔔 Existing Merchant detected at:", merchantPosition)
+                highlightMerchant(merchant)
+                sendDiscordNotification()
+                showTeleportNotification()
+                break
+            end
+        end
+    end
+end
+
+local function monitorMerchantFolder()
+    merchantFolder.ChildAdded:Connect(function(newFolder)
+        if newFolder:IsA("Folder") and newFolder.Name == "Violet" then
+            print("📂 New merchant folder detected:", newFolder.Name)
+
+            -- Wait a moment for the merchant model to be added
+            task.wait(1)
+
+            checkForMerchant(newFolder)
+        end
+    end)
+end
+
+monitorMerchantFolder()
+
+print("🚀 Merchant spawn detector is now running!")
