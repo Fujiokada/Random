@@ -2,3 +2,4 @@ loadstring(game:HttpGet("https://raw.githubusercontent.com/Fujiokada/Random/refs
 loadstring(game:HttpGet("https://raw.githubusercontent.com/Fujiokada/Random/refs/heads/main/Idk2"))()
 loadstring(game:HttpGet("https://raw.githubusercontent.com/Fujiokada/Random/refs/heads/main/brew1"))()
 loadstring(game:HttpGet("https://raw.githubusercontent.com/Fujiokada/Random/refs/heads/main/buy"))()
+print("Successfully loaded")
