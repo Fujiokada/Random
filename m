@@ -7,14 +7,18 @@ local webhookURL = "https://discord.com/api/webhooks/1339427763555270718/5KBiqur
 local merchantFolder = workspace:WaitForChild("Merchant")
 local merchantGuiPath = player.PlayerGui:WaitForChild("VioletBuyGUI").Merchant.Items
 
+local httpRequest = syn and syn.request or request or http_request or fluxus.request
+if not httpRequest then
+    error("Your executor does not support HTTP requests.")
+end
+
 local merchantPosition = nil -- Store merchant position globally
 
 -- Function to fetch item names properly
 local function getMerchantItems()
     local itemList = {}
 
-    -- Wait for GUI elements to be fully created
-    task.wait(1)
+    task.wait(1) -- Ensure GUI loads
 
     for _, frame in pairs(merchantGuiPath:GetChildren()) do
         if frame:IsA("Frame") then
@@ -28,6 +32,7 @@ local function getMerchantItems()
     return itemList
 end
 
+-- Send Discord Notification
 local function sendDiscordNotification()
     if not merchantPosition then return end
 
@@ -58,10 +63,7 @@ local function sendDiscordNotification()
                     ["inline"] = true
                 }
             },
-            ["footer"] = {
-                ["text"] = "Roblox Merchant Notifier",
-                ["icon_url"] = "https://i.imgur.com/yqbGJC3.png"
-            },
+            ["footer"] = { ["text"] = "Roblox Merchant Notifier" },
             ["timestamp"] = os.date("!%Y-%m-%dT%H:%M:%SZ")
         }}
     }
@@ -69,121 +71,88 @@ local function sendDiscordNotification()
     local jsonData = httpService:JSONEncode(data)
 
     local success, err = pcall(function()
-        httpService:PostAsync(webhookURL, jsonData, Enum.HttpContentType.ApplicationJson)
+        httpRequest({
+            Url = webhookURL,
+            Method = "POST",
+            Headers = { ["Content-Type"] = "application/json" },
+            Body = jsonData
+        })
     end)
 
     if success then
         print("✅ Merchant notification sent!")
     else
-        warn("❌ Failed to send merchant notification: " .. tostring(err))
+        warn("❌ Failed to send merchant notification:", err)
     end
 end
 
--- Find any valid teleport part inside the MerchantModel
-local function getTeleportPart(merchantModel)
-    for _, part in ipairs(merchantModel:GetDescendants()) do
-        if part:IsA("BasePart") then
-            return part
-        end
-    end
-    return nil
-end
-
--- Teleport function
+-- Teleport to the stored merchant position
 local function teleportToMerchant()
-    local merchantRoot = workspace:FindFirstChild("Merchant")
-    if merchantRoot then
-        local violetFolder = merchantRoot:FindFirstChild("Violet")
-        if violetFolder then
-            local merchantModel = violetFolder:FindFirstChild("MerchantModel")
-            if merchantModel then
-                local teleportPart = getTeleportPart(merchantModel)
-                if teleportPart and player.Character and player.Character:FindFirstChild("HumanoidRootPart") then
-                    player.Character.HumanoidRootPart.CFrame = teleportPart.CFrame
-                    print("✅ Teleported to Merchant at:", teleportPart.Position)
-                    return
-                end
+    if merchantPosition and player.Character and player.Character:FindFirstChild("HumanoidRootPart") then
+        player.Character.HumanoidRootPart.CFrame = CFrame.new(merchantPosition)
+        print("✅ Teleported to Merchant at:", merchantPosition)
+    else
+        warn("❌ Failed to teleport: Merchant position not set.")
+    end
+end
+
+-- Show Teleport Prompt
+local function showTeleportNotification()
+    starterGui:SetCore("SendNotification", {
+        Title = "Merchant Spawned!",
+        Text = "A merchant has appeared! Teleport?",
+        Duration = 999999, -- Stays until interacted with
+        Button1 = "Yes",
+        Button2 = "No",
+        Callback = function(response)
+            if response == "Yes" then
+                teleportToMerchant()
+            end
+        end
+    })
+end
+
+-- Detect and store merchant position
+local function checkForMerchant(folder)
+    folder.ChildAdded:Connect(function(merchant)
+        if merchant:IsA("Model") and merchant.Name == "MerchantModel" then
+            task.wait(1.5) -- Wait for full loading
+            local rootPart = merchant:FindFirstChild("HumanoidRootPart")
+            if rootPart then
+                merchantPosition = rootPart.Position
+                print("🔔 Merchant detected at:", merchantPosition)
+                sendDiscordNotification()
+                showTeleportNotification()
+            end
+        end
+    end)
+
+    for _, merchant in ipairs(folder:GetChildren()) do
+        if merchant:IsA("Model") and merchant.Name == "MerchantModel" then
+            task.wait(1.5) -- Wait for full loading
+            local rootPart = merchant:FindFirstChild("HumanoidRootPart")
+            if rootPart then
+                merchantPosition = rootPart.Position
+                print("🔔 Existing Merchant detected at:", merchantPosition)
+                sendDiscordNotification()
+                showTeleportNotification()
+                break
             end
         end
     end
-    warn("❌ Failed to teleport: No valid part found in MerchantModel.")
 end
 
--- Custom GUI for teleport decision
-local function createTeleportGui()
-    if player.PlayerGui:FindFirstChild("MerchantTeleportGui") then
-        player.PlayerGui.MerchantTeleportGui:Destroy()
-    end
+local function monitorMerchantFolder()
+    merchantFolder.ChildAdded:Connect(function(newFolder)
+        if newFolder:IsA("Folder") and newFolder.Name == "Violet" then
+            print("📂 New merchant folder detected:", newFolder.Name)
 
-    local screenGui = Instance.new("ScreenGui")
-    screenGui.Name = "MerchantTeleportGui"
-    screenGui.Parent = player.PlayerGui
-
-    local frame = Instance.new("Frame")
-    frame.Size = UDim2.new(0, 300, 0, 150)
-    frame.Position = UDim2.new(0.5, -150, 0.6, -75)
-    frame.BackgroundColor3 = Color3.fromRGB(0, 0, 0)
-    frame.BorderColor3 = Color3.fromRGB(255, 255, 255)
-    frame.Parent = screenGui
-
-    local textLabel = Instance.new("TextLabel")
-    textLabel.Size = UDim2.new(1, 0, 0.5, 0)
-    textLabel.BackgroundTransparency = 1
-    textLabel.Text = "A merchant has appeared! Teleport?"
-    textLabel.TextColor3 = Color3.fromRGB(255, 255, 255)
-    textLabel.Font = Enum.Font.Pixelify
-    textLabel.TextScaled = true
-    textLabel.Parent = frame
-
-    local yesButton = Instance.new("TextButton")
-    yesButton.Size = UDim2.new(0.4, 0, 0.3, 0)
-    yesButton.Position = UDim2.new(0.1, 0, 0.6, 0)
-    yesButton.BackgroundColor3 = Color3.fromRGB(0, 0, 0)
-    yesButton.BorderColor3 = Color3.fromRGB(255, 255, 255)
-    yesButton.Text = "Yes"
-    yesButton.TextColor3 = Color3.fromRGB(255, 255, 255)
-    yesButton.Font = Enum.Font.Pixelify
-    yesButton.TextScaled = true
-    yesButton.Parent = frame
-
-    local noButton = Instance.new("TextButton")
-    noButton.Size = UDim2.new(0.4, 0, 0.3, 0)
-    noButton.Position = UDim2.new(0.5, 0, 0.6, 0)
-    noButton.BackgroundColor3 = Color3.fromRGB(0, 0, 0)
-    noButton.BorderColor3 = Color3.fromRGB(255, 255, 255)
-    noButton.Text = "No"
-    noButton.TextColor3 = Color3.fromRGB(255, 255, 255)
-    noButton.Font = Enum.Font.Pixelify
-    noButton.TextScaled = true
-    noButton.Parent = frame
-
-    yesButton.MouseButton1Click:Connect(function()
-        teleportToMerchant()
-        screenGui:Destroy()
-    end)
-
-    noButton.MouseButton1Click:Connect(function()
-        screenGui:Destroy()
-    end)
-
-    task.delay(180, function()
-        if screenGui then
-            screenGui:Destroy()
+            task.wait(1) -- Wait for merchant model to be added
+            checkForMerchant(newFolder)
         end
     end)
 end
 
--- Monitor merchant folder
-merchantFolder.ChildAdded:Connect(function(newFolder)
-    if newFolder:IsA("Folder") and newFolder.Name == "Violet" then
-        task.wait(1)
-        local merchantModel = newFolder:FindFirstChild("MerchantModel")
-        if merchantModel then
-            merchantPosition = getTeleportPart(merchantModel) and getTeleportPart(merchantModel).Position
-            sendDiscordNotification()
-            createTeleportGui()
-        end
-    end
-end)
+monitorMerchantFolder()
 
 print("🚀 Merchant spawn detector is now running!")
