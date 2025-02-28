@@ -12,10 +12,6 @@ local potionRecipes = {
         Auras = { Rare = 4, Uncommon = 7, Windy = 1 }, 
         Items = { ["Haste Potion"] = 5 } 
     },
-    ["Cosmic Potion"] = { 
-        Auras = { Starweaver = 1, Crystal = 5, Lunar = 3, Life = 10, Serene = 25 }, 
-        Items = { ["Luck Potion III"] = 10 } 
-    },
     ["Luck Potion"] = { Auras = { Natural = 3 } },
     ["Luck Potion II"] = { 
         Auras = { Lucky = 1, Rare = 1, Uncommon = 3 }, 
@@ -31,6 +27,10 @@ local potionRecipes = {
     },
     ["Stardust Potion II"] = { 
         Auras = { Crystal = 5, Divine = 100, Golden = 25, Stardust = 1 }
+    },
+    ["Cosmic Potion"] = { 
+        Auras = { Starweaver = 1, Crystal = 5, Lunar = 3, Life = 10, Serene = 25 }, 
+        Items = { ["Luck Potion III"] = 10 } 
     }
 }
 
