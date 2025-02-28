@@ -25,7 +25,9 @@ local craftingItems = {
     {"Potions", "Stardust Potion", "Aura", "Divine", 1},
     {"Potions", "Stardust Potion II", "Aura", "Crystal", 1},
     {"Potions", "Stardust Potion II", "Aura", "Golden", 1},
-    {"Potions", "Stardust Potion II", "Aura", "Divine", 1}
+    {"Potions", "Stardust Potion II", "Aura", "Divine", 1},
+    {"Potions", "Stardust Potion II", "Aura", "Stardust", 1}
+    {"Potions", "Cosmic Potion", "Aura", "Starweaver", 1}
 }
 
 -- Faster AutoCraft Loop (Batching multiple requests at once)
