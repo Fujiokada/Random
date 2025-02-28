@@ -1,4 +1,4 @@
-loadstring(game:HttpGet("https://raw.githubusercontent.com/Fujiokada/Random/refs/heads/main/roll"))()
+loadstring(game:HttpGet("https://raw.githubusercontent.com/Fujiokada/Random/refs/heads/main/rol"))()
 loadstring(game:HttpGet("https://raw.githubusercontent.com/Fujiokada/Random/refs/heads/main/idk2"))()
 loadstring(game:HttpGet("https://raw.githubusercontent.com/Fujiokada/Random/refs/heads/main/brew"))()
 loadstring(game:HttpGet("https://raw.githubusercontent.com/Fujiokada/Random/refs/heads/main/buy"))()
