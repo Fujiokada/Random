@@ -1,0 +1,16 @@
+local Players = game:GetService("Players")
+local LocalPlayer = Players.LocalPlayer
+
+task.spawn(function()
+    while true do
+        -- Get the current player count
+        local playerCount = #Players:GetPlayers()
+
+        -- If there's more than one player in the server, disconnect
+        if playerCount > 1 then
+            game:Shutdown() -- Disconnects from the game
+        end
+
+        task.wait(1) -- Check every second to avoid excessive resource usage
+    end
+end)
