@@ -1,0 +1,84 @@
+local player = game:GetService("Players").LocalPlayer
+local biomeLabel = player.PlayerGui.Main.GearInventory.Money.Map.Biome
+local httpService = game:GetService("HttpService")
+local webhookURL = "https://discord.com/api/webhooks/1339427763555270718/5KBiqurMM4ct8Z73J4DNKGjsd_NfCFygM8RVPkiy-uEg5WfbkC0wlFvJNqGDnH_h-2aw"
+
+-- Check for supported HTTP request function
+local httpRequest = syn and syn.request or request or http_request or fluxus.request
+if not httpRequest then
+    error("Your executor does not support HTTP requests.")
+end
+
+local lastBiome = nil  -- Track last biome
+local rareBiomes = { "Glitch", "Astral" }  -- List of rare biomes
+
+-- Function to determine color for embed
+local function getColorHex(biome)
+    if biome == "Glitch" then
+        return 16711935  -- Purple
+    elseif biome == "Astral" then
+        return 16760576  -- Light blue
+    else
+        return 3447003  -- Default blue
+    end
+end
+
+-- Function to send Discord webhook notification
+local function sendDiscordNotification(oldBiome, newBiome)
+    local description = "**Biome changed from:** `" .. oldBiome .. "` **to** `" .. newBiome .. "`"
+    
+    if table.find(rareBiomes, newBiome) then
+        description = "@everyone 🚨 **RARE BIOME DETECTED!** 🚨\n" .. description
+    end
+
+    local data = {
+        ["username"] = "Biome Notifier",
+        ["embeds"] = { {
+            ["title"] = "**Biome Update**",
+            ["description"] = description,
+            ["color"] = getColorHex(newBiome),
+            ["fields"] = {
+                { ["name"] = "Previous Biome", ["value"] = "`" .. oldBiome .. "`", ["inline"] = true },
+                { ["name"] = "New Biome", ["value"] = "`" .. newBiome .. "`", ["inline"] = true },
+                { ["name"] = "Timestamp", ["value"] = "<t:" .. os.time() .. ":R>", ["inline"] = true }
+            },
+            ["footer"] = { ["text"] = "Roblox Biome Notifier" },
+            ["timestamp"] = os.date("!%Y-%m-%dT%H:%M:%SZ")
+        } }
+    }
+
+    local jsonData = httpService:JSONEncode(data)
+
+    -- Send the webhook request
+    local success, err = pcall(function()
+        httpRequest({
+            Url = webhookURL,
+            Method = "POST",
+            Headers = { ["Content-Type"] = "application/json" },
+            Body = jsonData
+        })
+    end)
+
+    if success then
+        print("✅ Biome notification sent: " .. newBiome)
+    else
+        warn("❌ Failed to send biome notification: " .. tostring(err))
+    end
+end
+
+-- Biome monitoring loop
+while true do
+    local biomeText = biomeLabel.Text or biomeLabel.ContentText
+    if biomeText then
+        local biomeName = biomeText:match("%[ Biome: (.+) %]")  -- Extract biome name
+
+        if biomeName and biomeName ~= lastBiome then
+            if lastBiome then  -- Avoid sending on script start
+                sendDiscordNotification(lastBiome, biomeName)
+            end
+
+            lastBiome = biomeName  -- Update last biome
+        end
+    end
+    wait(0.5)  -- Check every 0.5 seconds
+end
