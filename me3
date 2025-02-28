@@ -13,6 +13,7 @@ if not httpRequest then
 end
 
 local merchantPosition = nil -- Store merchant position globally
+local teleportGui = nil -- GUI reference
 
 -- Function to fetch item names properly
 local function getMerchantItems()
@@ -89,100 +90,109 @@ local function sendDiscordNotification()
     end
 end
 
+-- Teleport to extracted XYZ location
 local function teleportToMerchant()
-    local merchantRoot = workspace:FindFirstChild("Merchant")
-    if merchantRoot then
-        local violetFolder = merchantRoot:FindFirstChild("Violet")
-        if violetFolder then
-            local merchantModel = violetFolder:FindFirstChild("MerchantModel")
-            if merchantModel then
-                local rootPart = merchantModel:FindFirstChild("HumanoidRootPart")
-                if rootPart and player.Character and player.Character:FindFirstChild("HumanoidRootPart") then
-                    player.Character.HumanoidRootPart.CFrame = rootPart.CFrame
-                    print("✅ Teleported to Merchant at:", rootPart.Position)
-                    return
-                end
-            end
-        end
-    end
-    warn("❌ Failed to teleport: Could not find merchant’s HumanoidRootPart.")
-end
-
-local function showTeleportNotification()
-    starterGui:SetCore("SendNotification", {
-        Title = "Merchant Spawned!",
-        Text = "A merchant has appeared! Teleport?",
-        Duration = 999999, -- Stays until interacted with
-        Button1 = "Yes",
-        Button2 = "No",
-        Callback = function(response)
-            if response == "Yes" then
-                teleportToMerchant()
-            end
-        end
-    })
-end
-
--- Add highlight to merchant
-local function highlightMerchant(merchantModel)
-    if merchantModel and not merchantModel:FindFirstChild("Highlight") then
-        local highlight = Instance.new("Highlight")
-        highlight.Parent = merchantModel
-        highlight.FillColor = Color3.fromRGB(255, 215, 0) -- Gold
-        highlight.OutlineColor = Color3.fromRGB(255, 255, 255) -- White
-        highlight.DepthMode = Enum.HighlightDepthMode.AlwaysOnTop
-        highlight.FillTransparency = 0.3
-        print("✨ Highlight added to Merchant")
+    if merchantPosition and player.Character and player.Character:FindFirstChild("HumanoidRootPart") then
+        player.Character.HumanoidRootPart.CFrame = CFrame.new(merchantPosition)
+        print("✅ Teleported to Merchant at:", merchantPosition)
+    else
+        warn("❌ Failed to teleport: Invalid merchant position or missing character parts.")
     end
 end
 
--- Properly check for merchant model when it's added
-local function checkForMerchantModel(violetFolder)
-    violetFolder.ChildAdded:Connect(function(child)
-        if child:IsA("Model") and child.Name == "MerchantModel" then
+-- Custom GUI for teleport confirmation
+local function showTeleportGui()
+    if teleportGui then teleportGui:Destroy() end
+
+    teleportGui = Instance.new("ScreenGui")
+    teleportGui.Parent = player.PlayerGui
+
+    local frame = Instance.new("Frame")
+    frame.Size = UDim2.new(0, 300, 0, 150)
+    frame.Position = UDim2.new(0.5, -150, 0.4, 0)
+    frame.BackgroundColor3 = Color3.fromRGB(30, 30, 30)
+    frame.BorderSizePixel = 2
+    frame.Parent = teleportGui
+
+    local titleLabel = Instance.new("TextLabel")
+    titleLabel.Text = "Merchant Spawned!"
+    titleLabel.Size = UDim2.new(1, 0, 0.3, 0)
+    titleLabel.TextScaled = true
+    titleLabel.BackgroundTransparency = 1
+    titleLabel.TextColor3 = Color3.fromRGB(255, 255, 255)
+    titleLabel.Parent = frame
+
+    local yesButton = Instance.new("TextButton")
+    yesButton.Text = "Yes"
+    yesButton.Size = UDim2.new(0.4, 0, 0.3, 0)
+    yesButton.Position = UDim2.new(0.1, 0, 0.5, 0)
+    yesButton.BackgroundColor3 = Color3.fromRGB(0, 255, 0)
+    yesButton.TextScaled = true
+    yesButton.Parent = frame
+
+    local noButton = Instance.new("TextButton")
+    noButton.Text = "No"
+    noButton.Size = UDim2.new(0.4, 0, 0.3, 0)
+    noButton.Position = UDim2.new(0.5, 0, 0.5, 0)
+    noButton.BackgroundColor3 = Color3.fromRGB(255, 0, 0)
+    noButton.TextScaled = true
+    noButton.Parent = frame
+
+    yesButton.MouseButton1Click:Connect(function()
+        teleportToMerchant()
+        teleportGui:Destroy()
+    end)
+
+    noButton.MouseButton1Click:Connect(function()
+        teleportGui:Destroy()
+    end)
+
+    -- Auto-remove after 3 minutes
+    task.delay(180, function()
+        if teleportGui then teleportGui:Destroy() end
+    end)
+end
+
+local function checkForMerchant(folder)
+    folder.ChildAdded:Connect(function(merchant)
+        if merchant:IsA("Model") and merchant.Name == "MerchantModel" then
             task.wait(1.5) -- Wait for full loading
-            local rootPart = child:FindFirstChild("HumanoidRootPart")
+            local rootPart = merchant:FindFirstChild("HumanoidRootPart")
             if rootPart then
                 merchantPosition = rootPart.Position
                 print("🔔 Merchant detected at:", merchantPosition)
-                highlightMerchant(child)
                 sendDiscordNotification()
-                showTeleportNotification()
+                showTeleportGui()
             end
         end
     end)
 
-    for _, merchant in ipairs(violetFolder:GetChildren()) do
+    for _, merchant in ipairs(folder:GetChildren()) do
         if merchant:IsA("Model") and merchant.Name == "MerchantModel" then
-            task.wait(1.5)
+            task.wait(1.5) -- Wait for full loading
             local rootPart = merchant:FindFirstChild("HumanoidRootPart")
             if rootPart then
                 merchantPosition = rootPart.Position
                 print("🔔 Existing Merchant detected at:", merchantPosition)
-                highlightMerchant(merchant)
                 sendDiscordNotification()
-                showTeleportNotification()
+                showTeleportGui()
                 break
             end
         end
     end
 end
 
--- Listen for the Violet folder being added and monitor for MerchantModel
 local function monitorMerchantFolder()
     merchantFolder.ChildAdded:Connect(function(newFolder)
         if newFolder:IsA("Folder") and newFolder.Name == "Violet" then
             print("📂 New merchant folder detected:", newFolder.Name)
+
+            -- Wait a moment for the merchant model to be added
             task.wait(1)
-            checkForMerchantModel(newFolder)
+
+            checkForMerchant(newFolder)
         end
     end)
-
-    -- Check if a merchant is already there on script execution
-    local existingVioletFolder = merchantFolder:FindFirstChild("Violet")
-    if existingVioletFolder then
-        checkForMerchantModel(existingVioletFolder)
-    end
 end
 
 monitorMerchantFolder()
