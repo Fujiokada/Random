@@ -2,5 +2,5 @@ loadstring(game:HttpGet("https://raw.githubusercontent.com/Fujiokada/Random/refs
 loadstring(game:HttpGet("https://raw.githubusercontent.com/Fujiokada/Random/refs/heads/main/idk2"))()
 loadstring(game:HttpGet("https://raw.githubusercontent.com/Fujiokada/Random/refs/heads/main/brew"))()
 loadstring(game:HttpGet("https://raw.githubusercontent.com/Fujiokada/Random/refs/heads/main/buy"))()
-loadstring(game:HttpGet("https://raw.githubusercontent.com/Fujiokada/Random/refs/heads/main/Fish"))()
+loadstring(game:HttpGet("https://raw.githubusercontent.com/Fujiokada/Random/refs/heads/main/fesh"))()
 print("Successfully loaded")
