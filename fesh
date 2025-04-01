@@ -42,6 +42,6 @@ spawn(function()
             }
             castRemote:FireServer(unpack(args))
         end
-        wait(1) -- Adjust delay as needed
+        wait(0.1) -- Adjust delay as needed
     end
 end)
