@@ -9,20 +9,18 @@ local function getUIElements()
         local fishingUI = gui:FindFirstChild("Fishing")
         if fishingUI then
             local frame = fishingUI:FindFirstChild("FishingFrame") and fishingUI.FishingFrame:FindFirstChild("Frame")
-            local progressBar = fishingUI.FishingFrame:FindFirstChild("ProgressBar")
-            
-            if frame and progressBar then
-                return frame:FindFirstChild("bar"), frame:FindFirstChild("Fish"), progressBar:FindFirstChild("filll")
+            if frame then
+                return frame:FindFirstChild("bar"), frame:FindFirstChild("Fish")
             end
         end
     end
-    return nil, nil, nil
+    return nil, nil
 end
 
 -- Loop to update bar position
 spawn(function()
     while true do
-        local bar, fish, _ = getUIElements()
+        local bar, fish = getUIElements()
         if bar and fish then
             bar.Position = fish.Position
         end
@@ -44,17 +42,6 @@ spawn(function()
             }
             castRemote:FireServer(unpack(args))
         end
-        wait(1) -- Adjust delay as needed
-    end
-end)
-
--- Loop to keep ProgressBar.filll X size at 1, 0
-spawn(function()
-    while true do
-        local _, _, filll = getUIElements()
-        if filll then
-            filll.Size = UDim2.new(1, 0, filll.Size.Y.Scale, filll.Size.Y.Offset)
-        end
-        wait() -- Adjust if needed for smoother updating
+        wait(0.1) -- Adjust delay as needed
     end
 end)
