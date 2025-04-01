@@ -29,15 +29,15 @@ end
 local function sendDiscordNotification(oldBiome, newBiome)
     local description = "**Biome changed from:** `" .. oldBiome .. "` **to** `" .. newBiome .. "`"
 
-    -- Properly mention everyone
+    -- Mention @everyone if it's a rare biome
     local mentionEveryone = ""
     if table.find(rareBiomes, newBiome) then
-        mentionEveryone = "<@&ROLE_ID_HERE> 🚨 **RARE BIOME DETECTED!** 🚨\n"
+        mentionEveryone = "@everyone 🚨 **RARE BIOME DETECTED!** 🚨\n"
     end
 
     local data = {
         ["username"] = "Biome Notifier",
-        ["content"] = mentionEveryone,  -- This will properly ping everyone instead of being inside embed
+        ["content"] = mentionEveryone,  -- This ensures @everyone actually pings
         ["embeds"] = { {
             ["title"] = "**Biome Update**",
             ["description"] = description,
